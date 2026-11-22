@@ -1,0 +1,562 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   Tokens
+   ========================================================= */
+:root {
+  /* Color: paleta oficial del logo (cada uno cubre un rol de la referencia) */
+  --color-forest: #0b2e1a; /* Verde bosque · principal, fondos */
+  --color-cream: #f6e7c6; /* Crema · texto y tipografía */
+  --color-mustard: #d4a017; /* Dorado · estrellas, líneas y detalles */
+  --color-rust: #c74e2e; /* Terracota · libros y acentos cálidos */
+  --color-leaf: #4f8f52; /* Verde medio · ilustraciones y detalles */
+  --color-moss: #346b3a; /* Verde medio oscuro: fondos con texto crema (5.1:1, AA) */
+  --color-beige: #d9c6a3; /* Beige · páginas y detalles secundarios */
+
+  /* Terracota oscuro: solo detrás o como color de texto chico (AA 4.7:1 con crema).
+     El terracota oficial queda para títulos grandes, ondas, pegatinas y portadas. */
+  --color-brick: #b04028;
+
+  /* Fuera de la paleta oficial: rol "naranja" de la referencia, texto y placeholders */
+  --color-orange: #e58e2a;
+  --color-ink: #2b1a10;
+  --color-leather: #6b3f1f;
+
+  /* Espaciado */
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 20px;
+  --space-lg: 32px;
+  --space-xl: 56px;
+  --space-2xl: 96px;
+
+  /* Layout */
+  --container: 1200px;
+  --gutter: 16px;
+  --section-pad: var(--space-xl);
+  --radius-card: 14px;
+
+  /* Movimiento */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --gutter: 24px;
+    --section-pad: 72px;
+    --radius-card: 18px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --section-pad: 112px;
+  }
+}
+
+/* =========================================================
+   Base
+   ========================================================= */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    /* Nada puede ensanchar la página hacia el costado (Safari viejo no entiende "clip" en body). */
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply bg-cream font-body text-ink antialiased;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-mustard);
+    color: var(--color-forest);
+  }
+
+  [id] {
+    scroll-margin-top: var(--space-md);
+  }
+}
+
+/* =========================================================
+   Utilidades de marca
+   ========================================================= */
+@layer components {
+  .container-site {
+    width: 100%;
+    max-width: calc(var(--container) + var(--gutter) * 2);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .section-pad {
+    padding-block: var(--section-pad);
+  }
+
+  /* Display: gruesa, blanda, tracking negativo, interlineado cerrado */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.9;
+    font-variation-settings: 'opsz' 96;
+  }
+
+  .t-hero {
+    font-size: clamp(3.5rem, 8.5vw, 8.5rem);
+  }
+  .t-h1-catalog {
+    font-size: clamp(3rem, 7vw, 7rem);
+  }
+  .t-h1-about {
+    font-size: clamp(3rem, 7.5vw, 7.5rem);
+  }
+  .t-split {
+    font-size: clamp(3rem, 7vw, 7rem);
+  }
+  .t-book {
+    font-size: clamp(2.75rem, 6vw, 6rem);
+  }
+  .t-section {
+    font-size: clamp(2.25rem, 4.5vw, 4rem);
+  }
+  .t-category {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+  }
+  .t-marquee {
+    font-size: clamp(2.25rem, 5vw, 4.5rem);
+  }
+  .t-quote {
+    font-size: clamp(2rem, 5vw, 4.5rem);
+  }
+
+  .lede {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.45;
+    max-width: 34ch;
+  }
+  @media (min-width: 1024px) {
+    .lede {
+      font-size: 16px;
+    }
+  }
+
+  /* Texto de las páginas legales */
+  .legal-prose {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+  .legal-prose h2 {
+    margin-top: 2.25rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--color-brick);
+  }
+  .legal-prose h2:first-child {
+    margin-top: 0;
+  }
+  .legal-prose p,
+  .legal-prose ul,
+  .legal-prose ol {
+    margin-top: 0.75rem;
+  }
+  .legal-prose ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+  .legal-prose ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+  }
+  .legal-prose li + li {
+    margin-top: 0.35rem;
+  }
+  .legal-prose a {
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .legal-prose strong {
+    font-weight: 700;
+  }
+
+  /* Pastilla */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    transition:
+      transform 180ms var(--ease-out),
+      filter 180ms var(--ease-out),
+      background-color 180ms var(--ease-out),
+      color 180ms var(--ease-out);
+  }
+  /* Efectos de "mouse encima" solo con mouse: en celular el toque los dispara y se ve un zoom raro. */
+  @media (hover: hover) and (pointer: fine) {
+    .btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(0.95);
+    }
+  }
+  .btn:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn:focus-visible,
+  .focus-ring:focus-visible {
+    outline: 3px solid var(--ring, currentColor);
+    outline-offset: 3px;
+  }
+  .btn:disabled,
+  .btn[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    filter: none;
+  }
+
+  /* Tarjeta de producto */
+  .product-card {
+    transition: transform 200ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .product-card:hover {
+      transform: translateY(-4px) rotate(-1deg);
+    }
+  }
+
+  /* Máscara orgánica */
+  .blob-a {
+    border-radius: 46% 54% 42% 58% / 55% 45% 55% 45%;
+  }
+  .blob-b {
+    border-radius: 58% 42% 52% 48% / 46% 56% 44% 54%;
+  }
+
+  /* Sombra de contacto: el único lugar con sombra */
+  .contact-shadow {
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 92%;
+    height: 14px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0) 70%);
+    filter: blur(2px);
+    pointer-events: none;
+  }
+
+  /* Portada ilustrada */
+  .book-cover {
+    container-type: inline-size;
+  }
+  .book-noise {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.08;
+    mix-blend-mode: multiply;
+  }
+
+  /*
+   * Libro 3D (ficha). Profundidad = 14% del ancho.
+   * --w y --h son el ancho y alto en píxeles que mide Book3D (antes se usaba cqw, que en algunos
+   * celulares se recalcula mal al tocar y el libro "se agranda").
+   */
+  .book3d {
+    --w: 220px;
+    --h: 324px;
+    position: relative;
+    /* El ancho lo define el contenedor, nunca el libro: sin esto, Safari (iPhone) calcula el ancho
+       a partir del alto y ensancha toda la página. */
+    contain: inline-size;
+    min-width: 0;
+    perspective: 900px;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  .book3d img {
+    -webkit-user-drag: none;
+  }
+  /* Mientras mide (un instante al cargar) no se muestra, para que no salte. */
+  .book3d--measuring {
+    visibility: hidden;
+  }
+  /* En pantallas táctiles el libro no recibe toques: ni vista previa de imagen ni zoom. */
+  @media (pointer: coarse) {
+    .book3d {
+      pointer-events: none;
+    }
+  }
+  .book3d__body {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    transform: rotateX(4deg) rotateY(-22deg);
+    transition: transform 350ms var(--ease-out);
+    will-change: transform;
+  }
+  .book3d__body--idle {
+    animation: book-sway 8s ease-in-out infinite;
+  }
+  .book3d__face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 2px 4px 4px 2px;
+    overflow: hidden;
+  }
+  .book3d__front {
+    transform: translateZ(calc(var(--w) * 0.07));
+  }
+  .book3d__back {
+    background: var(--spine);
+    transform: rotateY(180deg) translateZ(calc(var(--w) * 0.07));
+  }
+  .book3d__spine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - var(--w) * 0.07);
+    width: calc(var(--w) * 0.14);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--spine) 82%, #000);
+    transform: rotateY(-90deg) translateZ(calc(var(--w) * 0.5));
+  }
+  .book3d__pages {
+    position: absolute;
+    top: 1.2%;
+    bottom: 1.2%;
+    left: calc(50% - var(--w) * 0.065);
+    width: calc(var(--w) * 0.13);
+    background: var(--color-cream);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-cream) 70%, var(--color-leather)),
+      inset 0 3px 0 color-mix(in srgb, var(--color-cream) 88%, var(--color-leather)),
+      inset 0 -3px 0 color-mix(in srgb, var(--color-cream) 88%, var(--color-leather));
+    transform: rotateY(90deg) translateZ(calc(var(--w) * 0.485));
+  }
+  .book3d__top {
+    position: absolute;
+    left: 1%;
+    right: 1.5%;
+    top: calc(50% - var(--w) * 0.065);
+    height: calc(var(--w) * 0.13);
+    background: var(--color-cream);
+    transform: rotateX(90deg) translateZ(calc(var(--h) * 0.5 - var(--w) * 0.007));
+  }
+
+  /* Tarjetas: el libro se inclina al pasar el mouse */
+  .card-book {
+    transition: transform 300ms var(--ease-out);
+    transform-origin: 50% 100%;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .product-card:hover .card-book {
+      transform: perspective(700px) rotateY(-16deg) rotateX(3deg) translateY(-4px);
+    }
+  }
+  /* Con teclado (Tab) se mantiene, en cualquier dispositivo. */
+  .product-card:focus-visible .card-book {
+    transform: perspective(700px) rotateY(-16deg) rotateX(3deg) translateY(-4px);
+  }
+
+  /* Alertas que llaman la atención (lo activa <Attention> cuando entran en pantalla). */
+  .attn {
+    display: inline-block;
+    transform-origin: center;
+  }
+  .attn--on {
+    animation: attn-pop 2.4s ease-out 3;
+  }
+
+  /* Botón de compra: un saltito para llamar la atención (dos veces y frena). */
+  .cta-nudge {
+    animation: cta-nudge 0.9s var(--ease-out) 1.6s 2;
+  }
+  .cta-nudge:hover {
+    animation: none;
+  }
+
+  /* Barra fija de compra */
+  .buy-bar {
+    transform: translateY(110%);
+    transition: transform 280ms var(--ease-out);
+  }
+  .buy-bar[data-visible='true'] {
+    transform: none;
+  }
+
+  /* Pegatinas */
+  .sticker {
+    position: absolute;
+    display: block;
+    width: calc(var(--s) * 0.72);
+    height: auto;
+    pointer-events: none;
+    transform: rotate(var(--r, 0deg));
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
+    z-index: 30;
+  }
+  .sticker--inline {
+    position: relative;
+    filter: none;
+    z-index: auto;
+  }
+  @media (min-width: 768px) {
+    .sticker {
+      width: var(--s);
+    }
+  }
+  .sticker--float {
+    animation: sticker-float 7s ease-in-out infinite;
+    animation-delay: var(--d, 0s);
+  }
+
+  /* Marquesina */
+  .marquee-track {
+    animation: marquee 30s linear infinite;
+  }
+
+  .spin-slow {
+    animation: spin 40s linear infinite;
+  }
+
+  /* Aparición */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 500ms var(--ease-out),
+      transform 500ms var(--ease-out);
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* =========================================================
+   Keyframes
+   ========================================================= */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes sticker-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-4px) rotate(calc(var(--r, 0deg) + 3deg));
+  }
+}
+
+@keyframes cta-nudge {
+  0%,
+  100% {
+    transform: none;
+  }
+  30% {
+    transform: translateY(-5px) rotate(-1.5deg);
+  }
+  55% {
+    transform: translateY(0) rotate(1deg);
+  }
+  75% {
+    transform: translateY(-2px) rotate(0deg);
+  }
+}
+
+/* Alertas (¡Quedan 2!, 10% OFF, cuenta regresiva): un "salto" con rebote, 3 veces al aparecer en pantalla. */
+@keyframes attn-pop {
+  0%,
+  40%,
+  100% {
+    transform: none;
+  }
+  10% {
+    transform: scale(1.2) rotate(-6deg);
+  }
+  20% {
+    transform: scale(0.94) rotate(4deg);
+  }
+  30% {
+    transform: scale(1.06) rotate(-2deg);
+  }
+}
+
+@keyframes book-sway {
+  0%,
+  100% {
+    transform: rotateX(5deg) rotateY(-34deg);
+  }
+  50% {
+    transform: rotateX(2deg) rotateY(-8deg);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   Movimiento reducido
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .marquee-track,
+  .spin-slow,
+  .sticker--float,
+  .book3d__body--idle,
+  .cta-nudge,
+  .attn--on {
+    animation: none;
+  }
+  .buy-bar {
+    transition: none;
+  }
+  .book3d__body,
+  .card-book {
+    transition: none;
+  }
+  .product-card:hover .card-book,
+  .product-card:focus-visible .card-book {
+    transform: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .btn,
+  .product-card {
+    transition: none;
+  }
+  .btn:hover,
+  .product-card:hover {
+    transform: none;
+  }
+}
