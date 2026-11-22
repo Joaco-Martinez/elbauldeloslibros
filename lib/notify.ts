@@ -1,38 +1,45 @@
+import nodemailer, { type Transporter } from 'nodemailer';
 import { customerStatusEmail, reviewRequestEmail, shopNewOrderEmail } from '@/lib/emails';
 import type { Order } from '@/lib/orderTypes';
 import { WHATSAPP_DISPLAY } from '@/lib/site';
 import type { Withdrawal } from '@/lib/withdrawals';
 
 /**
- * Envío de mails con Resend (resend.com).
- * Sin RESEND_API_KEY / MAIL_FROM / ORDER_EMAIL configurados, solo se registra en el log del servidor
+ * Envío de mails por Gmail (SMTP con contraseña de aplicación).
+ * Sin GMAIL_USER / GMAIL_APP_PASSWORD configurados, solo se registra en el log del servidor
  * (el mail al cliente se puede ver igual desde el panel: "Vista previa del mail").
+ * ORDER_EMAIL es opcional: si falta, los avisos al negocio llegan a la misma casilla de Gmail.
  */
 function config() {
-  const key = process.env.RESEND_API_KEY;
-  const from = process.env.MAIL_FROM;
-  const shop = process.env.ORDER_EMAIL;
-  return key && from && shop ? { key, from, shop } : null;
+  const user = process.env.GMAIL_USER;
+  // Google muestra la contraseña de aplicación en grupos de 4 con espacios: se aceptan igual.
+  const pass = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, '');
+  if (!user || !pass) return null;
+  const name = process.env.MAIL_FROM_NAME || 'El Baul de los Libros';
+  // Gmail siempre manda desde la cuenta autenticada: el remitente tiene que ser esa misma dirección.
+  return { user, pass, from: { name, address: user }, shop: process.env.ORDER_EMAIL || user };
 }
 
+let transporter: Transporter | null = null;
+
 async function sendEmail(
-  cfg: { key: string; from: string },
+  cfg: { user: string; pass: string; from: { name: string; address: string } },
   msg: { to: string; subject: string; text: string; html?: string; replyTo?: string },
 ) {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${cfg.key}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      from: cfg.from,
-      to: msg.to,
-      subject: msg.subject,
-      text: msg.text,
-      ...(msg.html ? { html: msg.html } : {}),
-      ...(msg.replyTo ? { reply_to: msg.replyTo } : {}),
-    }),
-    cache: 'no-store',
+  transporter ??= nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { user: cfg.user, pass: cfg.pass },
   });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
+  await transporter.sendMail({
+    from: cfg.from,
+    to: msg.to,
+    subject: msg.subject,
+    text: msg.text,
+    ...(msg.html ? { html: msg.html } : {}),
+    ...(msg.replyTo ? { replyTo: msg.replyTo } : {}),
+  });
 }
 
 export type MailResult = 'sent' | 'skipped' | 'failed';
@@ -116,7 +123,7 @@ export async function notifyWithdrawal(w: Withdrawal): Promise<MailResult> {
   }
 }
 
-/** true si los mails están configurados (Resend). */
+/** true si los mails están configurados (Gmail). */
 export const mailEnabled = () => config() !== null;
 
 /** Mail "¿Cómo te fue?" al cliente. */

@@ -94,7 +94,7 @@ export async function updateOrder(_prev: ActionState, form: FormData): Promise<A
   const mail = await sendStatusEmail(updated, await getOrigin(), note.trim() || undefined);
   const what = statusChanged ? 'Estado actualizado' : 'Datos guardados';
   if (mail === 'sent') return { ok: true, message: `${what} y mail enviado a ${updated.customer.email}.` };
-  if (mail === 'skipped') return { ok: true, message: `${what}. El mail no salió porque falta configurar Resend (mirá la vista previa).` };
+  if (mail === 'skipped') return { ok: true, message: `${what}. El mail no salió porque falta configurar Gmail (mirá la vista previa).` };
   return { ok: true, message: `${what}, pero el mail falló. Probá reenviarlo.` };
 }
 
