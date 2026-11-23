@@ -2,7 +2,7 @@
 
 Tienda online de libros nuevos (Argentina). Este documento explica cómo correrla, qué hay que configurar para publicarla y **qué falta: conectar los mails**.
 
-> El código de los mails **ya está hecho** (plantillas, disparadores y envío con la API de Resend). Lo que falta es **la cuenta de Resend, el dominio verificado y las variables de entorno**, más probar que lleguen bien. Detalle en la sección 6.
+> El código de los mails **ya está hecho** (plantillas, disparadores y envío por Gmail con contraseña de aplicación). Lo que falta es **crear la contraseña de aplicación y cargar las variables de entorno**, más probar que lleguen bien. Detalle en la sección 6.
 
 ---
 
@@ -14,7 +14,8 @@ Tienda online de libros nuevos (Argentina). Este documento explica cómo correrl
 | Estilos | Tailwind CSS 3 (colores como variables CSS en `app/globals.css`) |
 | Base de datos | Upstash Redis (REST). En local, si no hay Upstash, usa archivos JSON en `.data/` |
 | Pagos | Mercado Pago · Checkout Pro con la **API de Orders** (`POST /v1/orders`) |
-| Mails | Resend (API REST, sin SDK) |
+| Mails | Gmail por SMTP (`nodemailer`, contraseña de aplicación) |
+| Cron | Vercel Cron (`vercel.json`) |
 | Hosting pensado | Vercel |
 
 No hay librerías de UI ni de animación: todo está hecho a mano.
@@ -160,9 +161,10 @@ La dueña puede **agregar libros nuevos** y **editar los existentes** (título, 
 | `CRON_SECRET` | Clave del cron de vencimientos (`Authorization: Bearer …`) | Sí |
 | `MP_ACCESS_TOKEN` | Access Token de Mercado Pago (producción) | Sí |
 | `MP_WEBHOOK_SECRET` | Clave secreta de Webhooks de Mercado Pago | Sí |
-| `RESEND_API_KEY` | API key de Resend | Sí (sección 6) |
-| `MAIL_FROM` | Remitente, ej. `El Baul de los Libros <pedidos@dominio.com.ar>` | Sí |
-| `ORDER_EMAIL` | Mail del dueño: avisos de pedidos nuevos y arrepentimientos. También es el reply-to | Sí |
+| `GMAIL_USER` | Cuenta de Gmail desde la que salen los mails | Sí (sección 6) |
+| `GMAIL_APP_PASSWORD` | Contraseña de aplicación de esa cuenta (no la contraseña normal) | Sí (sección 6) |
+| `MAIL_FROM_NAME` | Nombre del remitente. Por defecto `El Baul de los Libros` | No |
+| `ORDER_EMAIL` | Mail del dueño: avisos de pedidos nuevos y arrepentimientos. También es el reply-to. Por defecto, `GMAIL_USER` | No |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Base de datos | **Sí en Vercel** |
 
 `.env.local` **no** viene en el zip (tiene claves). Las credenciales las carga el dueño en Vercel.
@@ -175,7 +177,7 @@ La dueña puede **agregar libros nuevos** y **editar los existentes** (título, 
    - Claves que usa: `order:<id>` + zset `orders`, hash `stock`, `cart:<id>` + zset `carts` (TTL 30 días), `withdrawal:<code>` + zset `withdrawals`, `feedback:<orderId>` + zset `feedback`.
 4. Cargar el resto de las variables (sección 4) y desplegar.
 5. **Cargar el stock inicial** desde `/admin/stock` (o en la consola de Upstash, ver sección 9). Un libro con 0 no se muestra.
-6. **Dominio propio** (recomendado y necesario para los mails): apuntarlo a Vercel y poner `SITE_URL` con `https://`.
+6. **Dominio propio**: apuntarlo a Vercel y poner `SITE_URL` con `https://`. Dejar `www.` como dominio principal (el webhook de Mercado Pago no sigue redirecciones).
 
 ### Mercado Pago (producción)
 - Aplicación ya creada en Mercado Pago Developers (Checkout Pro · API de Orders). El dueño activa las **credenciales de producción** y las carga en `MP_ACCESS_TOKEN`.
@@ -185,18 +187,20 @@ La dueña puede **agregar libros nuevos** y **editar los existentes** (título, 
 - `auto_return` y las fotos de los ítems solo se mandan si `SITE_URL` es `https://`.
 - Ya probado con credenciales de prueba: un pago aprobado pasó el pedido a "Pago confirmado" solo.
 
-### Cron (cada hora)
-`GET` o `POST https://<dominio>/api/cron/vencimientos` con `Authorization: Bearer <CRON_SECRET>`. Hace dos cosas:
+### Cron (Vercel Cron, en `vercel.json`)
+Vercel llama a `GET /api/cron/vencimientos` y, si `CRON_SECRET` está cargada en Vercel, manda solo `Authorization: Bearer <CRON_SECRET>`. No hay que configurar nada afuera. Hace dos cosas:
 1. Cancela los pedidos sin pagar con más de 24 h, devuelve el stock, avisa al cliente y pasa el carrito a "Carritos" del panel.
 2. Manda el mail "¿Cómo te fue?" a los pedidos entregados hace 3 días o más.
 
-Vercel Hobby solo permite crons diarios: usar **cron-job.org** (gratis) o **Upstash QStash** cada 1 hora. Además se dispara solo cuando alguien hace un pedido, completa el checkout o abre el panel.
+- **Plan Hobby (gratis)**: Vercel solo permite **una vez por día**. Está configurado `0 12 * * *` (12:00 UTC = 9:00 en Argentina; Vercel puede correrlo en cualquier momento de esa hora). Además se revisa solo cuando alguien hace un pedido, completa el checkout o abre el panel, así que en la práctica los vencimientos se procesan seguido.
+- **Plan Pro**: se puede pasar a cada hora cambiando el `schedule` a `0 * * * *`.
+- Se ve en Vercel → proyecto → *Settings → Cron Jobs* (ahí también hay un botón para correrlo a mano).
 
 ## 6. ✉️ Mails — lo que falta hacer
 
 ### 6.1 Qué hay programado
-Envío: `lib/notify.ts` (función `sendEmail`, POST a `https://api.resend.com/emails`). Plantillas HTML + texto: `lib/emails.ts`.
-Si faltan `RESEND_API_KEY`, `MAIL_FROM` u `ORDER_EMAIL`, **no se manda nada**: el contenido se escribe en el log del servidor (`[pedidos] Mail … sin configurar`).
+Envío: `lib/notify.ts` (función `sendEmail`, SMTP de Gmail `smtp.gmail.com:465` con `nodemailer`). Plantillas HTML + texto: `lib/emails.ts`.
+Si faltan `GMAIL_USER` o `GMAIL_APP_PASSWORD`, **no se manda nada**: el contenido se escribe en el log del servidor (`[pedidos] Mail … sin configurar`).
 
 | Mail | A quién | Cuándo sale | Dónde se dispara |
 |---|---|---|---|
@@ -211,15 +215,15 @@ Si faltan `RESEND_API_KEY`, `MAIL_FROM` u `ORDER_EMAIL`, **no se manda nada**: e
 Vista previa de cualquier mail de estado desde el panel: pedido → "Vista previa del mail" (`/admin/pedidos/<id>/mail`).
 
 ### 6.2 Pasos para conectarlo
-1. Crear cuenta en **resend.com** (el plan gratis alcanza para empezar).
-2. **Domains → Add domain** con el dominio de la tienda (ideal un subdominio de envío, ej. `mail.dominio.com.ar`, o el dominio raíz).
-3. Cargar en el DNS del dominio los registros que da Resend (**SPF** y **DKIM**; recomendable sumar **DMARC**, ej. `v=DMARC1; p=none;`). Esperar a que figure *Verified*.
-4. Crear una **API key** (permiso *Sending access*).
-5. Variables en Vercel:
-   - `RESEND_API_KEY=re_…`
-   - `MAIL_FROM=El Baul de los Libros <pedidos@dominio.com.ar>` (tiene que ser del dominio verificado)
-   - `ORDER_EMAIL=` el mail del dueño
-6. Volver a desplegar.
+1. En la cuenta de Google de la tienda, activar la **verificación en 2 pasos** (myaccount.google.com → Seguridad).
+2. Entrar a **myaccount.google.com/apppasswords**, crear una contraseña de aplicación (nombre: "Tienda web") y copiar los 16 caracteres.
+3. Variables en Vercel:
+   - `GMAIL_USER=` la cuenta, ej. `elbauldeloslibros@gmail.com`
+   - `GMAIL_APP_PASSWORD=` los 16 caracteres (con o sin espacios)
+   - `ORDER_EMAIL=` el mail del dueño, si es distinto de la cuenta de envío (opcional)
+4. Volver a desplegar.
+
+Límites de Gmail: unos **500 mails por día** (cuenta gratis). El remitente siempre es la dirección de `GMAIL_USER` (Gmail no deja mandar como otra dirección). Si se cambia la contraseña de la cuenta de Google, la contraseña de aplicación se invalida y hay que crear otra.
 
 ### 6.3 Pruebas (con credenciales de prueba de Mercado Pago o pedidos por transferencia)
 - [ ] Pedido por transferencia → llegan "Recibimos tu pedido" (cliente) y el aviso al dueño.
@@ -233,6 +237,23 @@ Vista previa de cualquier mail de estado desde el panel: pedido → "Vista previ
 
 ### 6.4 Mejora opcional (no está hecha)
 Mail automático de **carrito abandonado**: hoy el panel "Carritos" arma el mensaje y el dueño lo manda a mano (WhatsApp o mail). Se podría mandar solo a las 2 h desde el mismo cron, usando `lib/abandonedCarts.ts` y una plantilla nueva en `lib/emails.ts`. Si se hace: una sola vez por carrito y respetando el aviso de privacidad del checkout.
+
+## 6 bis. Mantenimiento web (cobranza de mensualidades)
+
+El sitio está conectado al sistema de cobranza (repo `mensualidades`), igual que los otros sitios:
+- **Panel → Servicio web** (`/admin/servicio-web`): la página de pago de cobranza embebida (`<payUrl>?embed=1`). El dueño ve el monto del mes, los datos para transferir e informa el pago desde ahí.
+- **Aviso en todo el panel** cuando hay un cobro pendiente (amarillo, con la fecha de suspensión) o el sitio ya está suspendido (rojo).
+- **Suspensión automática** (`middleware.ts`): si cobranza dice `suspended: true`, la tienda muestra `/mantenimiento` con **503 + Retry-After** (Google lo toma como temporal y no saca el sitio del buscador). Siguen abiertos: `/admin`, `/pedido/*` (seguimiento), `/checkout/gracias` (vuelta de Mercado Pago), las páginas legales (el botón de arrepentimiento es obligatorio) y toda la API (webhook de Mercado Pago y cron). Con sesión del panel se ve la tienda igual.
+- Lógica en `lib/servicioWeb.ts`: consulta `GET <API>/site/<token>/status` con caché de 5 min y timeout de 4 s. **Si faltan las variables o cobranza no responde, el sitio nunca se suspende.**
+
+Variables (se copian desde cobranza → Proyectos → botón "Sitio"). Como son `NEXT_PUBLIC_`, quedan fijas en el build: después de cargarlas o cambiarlas hay que hacer **Redeploy**.
+
+| Variable | Ejemplo |
+|---|---|
+| `NEXT_PUBLIC_MENSUALIDADES_API_URL` | `https://<api-de-cobranza>/api` (termina en `/api`) |
+| `NEXT_PUBLIC_MENSUALIDADES_SITE_TOKEN` | el token del proyecto |
+
+Si algo no anda, `/admin/servicio-web` muestra el diagnóstico (faltan variables, token inválido, URL mal, cobranza caída).
 
 ## 7. Datos que faltan del negocio
 - `lib/site.ts` → `LEGAL.cuit` y `LEGAL.email` (se muestran en Términos y Privacidad cuando se completan).

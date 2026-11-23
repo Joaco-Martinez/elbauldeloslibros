@@ -6,6 +6,7 @@ import { LEGAL, WHATSAPP_DISPLAY, whatsappUrl } from '@/lib/site';
 export const metadata: Metadata = {
   title: 'Política de privacidad',
   description: 'Qué datos guardamos cuando comprás en El Baul de los Libros, para qué y cómo pedir que los borremos.',
+  alternates: { canonical: '/privacidad' },
 };
 
 export default function PrivacidadPage() {

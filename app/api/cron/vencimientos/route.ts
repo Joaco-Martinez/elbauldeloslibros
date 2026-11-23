@@ -7,8 +7,8 @@ import { safeEqual } from '@/lib/tokenCompare';
 
 /**
  * Cancela los pedidos sin pagar con más de 24 h y devuelve el stock.
- * Lo llaman: el panel al abrirse (con tu sesión) y, ya publicado, un cron cada hora
- * con el encabezado "Authorization: Bearer <CRON_SECRET>".
+ * Lo llaman: el panel al abrirse (con tu sesión) y Vercel Cron (vercel.json), que manda solo
+ * el encabezado "Authorization: Bearer <CRON_SECRET>" cuando la variable está cargada en Vercel.
  */
 async function handle(request: Request) {
   const secret = process.env.CRON_SECRET;

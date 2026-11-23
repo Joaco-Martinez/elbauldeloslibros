@@ -19,7 +19,7 @@ function tooMany(ip: string) {
 
 /**
  * Botón de arrepentimiento: sin registrarse, con nombre y email alcanza.
- * Devuelve el código en el momento (y por mail cuando Resend está configurado).
+ * Devuelve el código en el momento (y por mail cuando Gmail está configurado).
  */
 export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'local';

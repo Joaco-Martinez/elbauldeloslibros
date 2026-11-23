@@ -5,10 +5,12 @@ import { login, type ActionState } from '@/app/admin/actions';
 import { Button } from '@/components/ui/Button';
 import { adminInput } from './styles';
 
-export function LoginForm() {
+/** `next`: a qué página del panel volver después de entrar (por defecto, Pedidos). */
+export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(login, {});
   return (
     <form action={action} className="mx-auto max-w-[380px]">
+      {next && <input type="hidden" name="next" value={next} />}
       <label htmlFor="password" className="mb-1.5 block text-[13px] font-bold">
         Contraseña del panel
       </label>

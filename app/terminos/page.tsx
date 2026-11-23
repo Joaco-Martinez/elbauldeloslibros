@@ -8,6 +8,7 @@ import { CONSUMER_DEFENSE_URL, LEGAL, WHATSAPP_DISPLAY, WITHDRAWAL_DAYS, whatsap
 export const metadata: Metadata = {
   title: 'Términos y condiciones',
   description: 'Condiciones de compra de El Baul de los Libros: precios, pagos, envíos, reservas y arrepentimiento.',
+  alternates: { canonical: '/terminos' },
 };
 
 export default function TerminosPage() {

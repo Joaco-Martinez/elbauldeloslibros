@@ -39,7 +39,9 @@ export async function login(_prev: ActionState, form: FormData): Promise<ActionS
   }
   failedAttempts = 0;
   await startSession();
-  redirect('/admin/pedidos');
+  // Solo páginas del panel (evita redirigir a otro sitio con un "next" armado).
+  const next = String(form.get('next') ?? '');
+  redirect(/^\/admin\/[a-z-]+$/.test(next) ? next : '/admin/pedidos');
 }
 
 export async function logout() {
@@ -95,7 +97,7 @@ export async function updateOrder(_prev: ActionState, form: FormData): Promise<A
   const mail = await sendStatusEmail(updated, await getOrigin(), note.trim() || undefined);
   const what = statusChanged ? 'Estado actualizado' : 'Datos guardados';
   if (mail === 'sent') return { ok: true, message: `${what} y mail enviado a ${updated.customer.email}.` };
-  if (mail === 'skipped') return { ok: true, message: `${what}. El mail no salió porque falta configurar Resend (mirá la vista previa).` };
+  if (mail === 'skipped') return { ok: true, message: `${what}. El mail no salió porque falta configurar Gmail (mirá la vista previa).` };
   return { ok: true, message: `${what}, pero el mail falló. Probá reenviarlo.` };
 }
 

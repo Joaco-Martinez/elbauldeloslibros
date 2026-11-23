@@ -7,6 +7,7 @@ import { WITHDRAWAL_DAYS, whatsappUrl } from '@/lib/site';
 export const metadata: Metadata = {
   title: 'Botón de arrepentimiento',
   description: `Si compraste online, tenés ${WITHDRAWAL_DAYS} días para arrepentirte sin dar explicaciones. Completá el formulario y te damos tu código al instante.`,
+  alternates: { canonical: '/arrepentimiento' },
 };
 
 export default function ArrepentimientoPage() {
