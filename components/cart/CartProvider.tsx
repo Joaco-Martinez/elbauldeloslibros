@@ -112,9 +112,20 @@ export function CartProvider({
 
   // El carrito vive en el navegador de cada visitante (se lee después de montar para evitar desajustes SSR).
   // Si llega con un link de "te guardamos el carrito" (?c=libro:2,otro:1), ese carrito reemplaza al guardado.
+  // Si alguien tocó "Agregar" mientras la página terminaba de cargar, ese libro ya está en `prev`:
+  // se suma a lo guardado en vez de pisarlo (antes ese primer toque "no hacía nada").
   useEffect(() => {
     const fromLink = readCartLink();
-    setItems(fitToStock(fromLink ?? readStorage()));
+    const saved = fromLink ?? readStorage();
+    setItems((prev) => {
+      // Sin modificar `saved` (en desarrollo React corre esta función dos veces).
+      const merged = saved.map((i) => {
+        const early = prev.find((p) => p.id === i.id);
+        return early ? { id: i.id, qty: clampQty(i.id, i.qty + early.qty) } : i;
+      });
+      for (const early of prev) if (!saved.some((i) => i.id === early.id)) merged.push(early);
+      return fitToStock(merged);
+    });
     setHydrated(true);
   }, []);
 

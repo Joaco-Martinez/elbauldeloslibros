@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Firma inválida' }, { status: 401 });
   }
 
-  const origin = process.env.SITE_URL?.replace(/\/$/, '') || url.origin;
+  const origin = process.env.SITE_URL?.trim().replace(/\/$/, '') || url.origin;
 
   if (type === 'order') {
     const mp = await getMpOrder(dataId);

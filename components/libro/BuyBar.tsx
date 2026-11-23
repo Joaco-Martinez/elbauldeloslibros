@@ -16,7 +16,18 @@ interface BuyBarProps {
 export function BuyBar({ bookId, title, price, transferPrice, watchId }: BuyBarProps) {
   const [ctaPassed, setCtaPassed] = useState(false);
   const [footerVisible, setFooterVisible] = useState(false);
-  const visible = ctaPassed && !footerVisible;
+  // En celular la barra está desde que carga (el botón principal queda más abajo de la primera pantalla);
+  // en compu aparece cuando el botón principal ya pasó.
+  const [isPhone, setIsPhone] = useState(false);
+  const visible = (isPhone || ctaPassed) && !footerVisible;
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const update = () => setIsPhone(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     const target = document.getElementById(watchId);
@@ -46,12 +57,10 @@ export function BuyBar({ bookId, title, price, transferPrice, watchId }: BuyBarP
       <div className="container-site flex items-center justify-between gap-4 py-3">
         <div className="min-w-0">
           <p className="truncate text-[14px] font-bold md:text-[15px]">{title}</p>
+          {/* Igual que en la ficha: grande el de transferencia, después el de Mercado Pago. */}
           <p className="text-[12px] font-medium md:text-[13px]">
-            {price}
-            <span className="hidden sm:inline">
-              {' '}
-              · <span className="font-bold text-mustard">{transferPrice} con transferencia</span>
-            </span>
+            <span className="font-bold text-mustard">{transferPrice} con transferencia</span>
+            <span className="hidden sm:inline"> · {price} con Mercado Pago</span>
           </p>
         </div>
         <AddToCartButton bookId={bookId} size="bar" className="shrink-0" />

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { fullTitle, type Book, type Category } from '@/data/books';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
+import { BuyNowButton } from '@/components/cart/BuyNowButton';
 import { BookImage } from '@/components/ui/BookImage';
 import { Attention } from '@/components/ui/Attention';
 import { StarRating } from '@/components/ui/StarRating';
@@ -155,17 +156,18 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
                   </ul>
                 </nav>
               )}
-              <p className="display mt-6 text-[clamp(2rem,3.5vw,3rem)]">{formatPrice(book.price)}</p>
-              <div className="relative mt-4 inline-flex -rotate-1 items-center gap-4 rounded-[18px] bg-forest py-3 pl-5 pr-4 text-cream md:gap-5 md:py-3.5 md:pl-6 md:pr-5">
+              {/* El precio grande es siempre el de transferencia (igual que en las tarjetas); el de Mercado Pago va abajo, más chico. */}
+              <div className="relative mt-6 inline-flex -rotate-1 items-center gap-4 rounded-[18px] bg-forest py-3 pl-5 pr-4 text-cream md:gap-5 md:py-3.5 md:pl-6 md:pr-5">
                 <div>
-                  <p className="display text-[clamp(1.9rem,3.2vw,2.6rem)] text-mustard">{formatPrice(transferPrice)}</p>
-                  <p className="mt-1 text-[13px] font-bold md:text-[14px]">pagando con transferencia</p>
+                  <p className="display text-[clamp(2.2rem,3.8vw,3.2rem)] text-mustard">{formatPrice(transferPrice)}</p>
+                  <p className="mt-1 text-[13px] font-bold md:text-[14px]">con transferencia</p>
                 </div>
                 <Attention className="rounded-full bg-mustard px-3 py-1.5 text-[13px] font-bold uppercase leading-none text-forest md:text-[14px]">
                   10% off
                 </Attention>
                 <Sticker variant="flower" size={24} rotate={12} className="-right-2 -top-2.5" delay={1.1} />
               </div>
+              <p className="mt-3 text-[15px] font-bold md:text-[16px]">{formatPrice(book.price)} con Mercado Pago</p>
               <p className="lede mt-5 !max-w-[44ch]">{book.sinopsis}</p>
               {momentos.length > 0 && (
                 <div className="mt-6">
@@ -189,17 +191,9 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
                 </Attention>
               )}
               <div id="comprar" className={`${lowStock ? 'mt-4' : 'mt-8'} flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-6`}>
-                <div className="relative w-full sm:w-auto">
-                  <AddToCartButton bookId={book.id} className="w-full sm:w-auto" />
-                  <Sticker variant="sun" size={40} rotate={14} className="-right-1 -top-4 md:-right-3" delay={0.6} />
-                </div>
-                <Link
-                  href="/catalogo"
-                  className="focus-ring rounded-sm text-[14px] font-bold underline decoration-2 underline-offset-4 hover:decoration-mustard"
-                  style={{ '--ring': 'var(--color-cream)' } as CSSProperties}
-                >
-                  Seguir mirando
-                </Link>
+                {/* Sin stickers encima de los botones (se confunden con el botón y tapan el texto). */}
+                <AddToCartButton bookId={book.id} className="w-full sm:w-auto" />
+                <BuyNowButton bookId={book.id} className="w-full sm:w-auto" />
               </div>
               <ul className="mt-8 grid w-full max-w-[460px] grid-cols-3 divide-x-[1.5px] divide-cream rounded-[18px] border-[1.5px] border-cream">
                 {(

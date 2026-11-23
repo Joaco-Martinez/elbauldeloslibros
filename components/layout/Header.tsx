@@ -58,7 +58,8 @@ export function Header() {
                       }`}
                     >
                       {link.label}
-                      {link.external && <span className="sr-only"> (abre WhatsApp)</span>}
+                      {link.external && <span aria-hidden="true"> ↗</span>}
+                      {link.external && <span className="sr-only"> (se abre en otra pestaña)</span>}
                     </Link>
                   </li>
                 );

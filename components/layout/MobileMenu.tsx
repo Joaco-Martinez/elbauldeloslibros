@@ -72,7 +72,8 @@ export function MobileMenu({ open, onClose, theme, pathname }: MobileMenuProps) 
                   }`}
                 >
                   {link.label}.
-                  {link.external && <span className="sr-only"> (abre WhatsApp)</span>}
+                  {link.external && <span aria-hidden="true" className="text-[0.6em]"> ↗</span>}
+                  {link.external && <span className="sr-only"> (se abre en otra pestaña)</span>}
                 </Link>
               </li>
             );
