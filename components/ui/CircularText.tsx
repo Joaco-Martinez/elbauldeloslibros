@@ -6,12 +6,25 @@ interface CircularTextProps {
   fontSize?: number;
   spin?: boolean;
   className?: string;
+  /** Color del texto (por defecto crema). */
+  color?: string;
+  /** Distancia del texto al borde (en unidades del viewBox). */
+  inset?: number;
 }
 
 /** Texto en loop alrededor de un círculo, decorativo. */
-export function CircularText({ text, id, size = 460, fontSize = 22, spin = true, className = '' }: CircularTextProps) {
+export function CircularText({
+  text,
+  id,
+  size = 460,
+  fontSize = 22,
+  spin = true,
+  className = '',
+  color = 'var(--color-cream)',
+  inset = 14,
+}: CircularTextProps) {
   const c = size / 2;
-  const r = c - fontSize - 14;
+  const r = c - fontSize - inset;
   const circumference = 2 * Math.PI * r;
 
   return (
@@ -28,7 +41,7 @@ export function CircularText({ text, id, size = 460, fontSize = 22, spin = true,
         textLength={circumference}
         lengthAdjust="spacing"
         style={{
-          fill: 'var(--color-cream)',
+          fill: color,
           fontFamily: 'var(--font-display)',
           fontWeight: 800,
           fontSize,

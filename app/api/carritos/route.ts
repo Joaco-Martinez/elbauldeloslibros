@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getBook } from '@/data/books';
 import { CART_ID_RE, cartStore } from '@/lib/abandonedCarts';
+import { loadCatalog } from '@/lib/catalog';
 import { maybeExpireUnpaidOrders } from '@/lib/expireOrders';
 import { getOrigin } from '@/lib/origin';
 import { MAX_QTY_PER_BOOK } from '@/lib/limits';
@@ -25,6 +26,7 @@ export async function POST(request: Request) {
   const id = str(body.id, 36);
   if (!CART_ID_RE.test(id)) return NextResponse.json({ ok: false }, { status: 400 });
 
+  await loadCatalog();
   const rawItems = Array.isArray(body.items) ? body.items.slice(0, 50) : [];
   const items: LineInput[] = rawItems.flatMap((i) => {
     const { id: bookId, qty } = (i ?? {}) as LineInput;

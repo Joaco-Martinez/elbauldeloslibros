@@ -7,6 +7,7 @@ import { CartProvider } from '@/components/cart/CartProvider';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { books } from '@/data/books';
 import { getBookCover } from '@/lib/bookImage';
+import { loadCatalog, loadedCustomCatalog } from '@/lib/catalog';
 import './globals.css';
 
 
@@ -44,7 +45,10 @@ export const viewport: Viewport = {
   themeColor: '#B04028',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Libros cargados en el panel: se suman al catálogo, y se le pasan al navegador para el carrito.
+  await loadCatalog();
+  const customCatalog = loadedCustomCatalog();
   // Fotos resueltas en el servidor para que el carrito (cliente) las pueda mostrar.
   const bookImages = Object.fromEntries(books.map((b) => [b.id, getBookCover(b)]));
 
@@ -58,7 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Saltar al contenido
         </a>
-        <CartProvider images={bookImages}>
+        <CartProvider images={bookImages} customCatalog={customCatalog}>
           <Header />
           <main id="contenido">{children}</main>
           <Footer />

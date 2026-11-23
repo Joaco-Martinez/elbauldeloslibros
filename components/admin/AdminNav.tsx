@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { logout } from '@/app/admin/actions';
 
-type Tab = 'pedidos' | 'carritos' | 'stock' | 'opiniones' | 'arrepentimientos';
+type Tab = 'pedidos' | 'carritos' | 'libros' | 'secciones' | 'stock' | 'opiniones' | 'arrepentimientos';
 
 /** Menú del panel: Pedidos / Carritos / Stock / Cerrar sesión. */
 export function AdminNav({ current }: { current: Tab }) {
@@ -19,6 +19,8 @@ export function AdminNav({ current }: { current: Tab }) {
       <nav aria-label="Panel" className="flex flex-wrap gap-2">
         {tab('pedidos', 'Pedidos')}
         {tab('carritos', 'Carritos')}
+        {tab('libros', 'Libros')}
+        {tab('secciones', 'Secciones')}
         {tab('stock', 'Stock')}
         {tab('opiniones', 'Opiniones')}
         {tab('arrepentimientos', 'Arrepentimientos')}

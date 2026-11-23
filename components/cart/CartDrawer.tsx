@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRef, type CSSProperties } from 'react';
-import { getBook } from '@/data/books';
+import { fullTitle, getBook } from '@/data/books';
 import { Attention } from '@/components/ui/Attention';
 import { BookCover } from '@/components/ui/BookCover';
 import { Button } from '@/components/ui/Button';
@@ -93,7 +93,7 @@ export function CartDrawer() {
                         onClick={close}
                         className="focus-ring rounded-sm text-[14px] font-bold leading-snug hover:underline"
                       >
-                        {book.title}
+                        {fullTitle(book)}
                       </Link>
                       {book.author && <p className="mt-0.5 truncate text-[12px] font-medium">{book.author}</p>}
 

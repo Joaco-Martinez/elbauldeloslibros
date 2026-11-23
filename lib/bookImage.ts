@@ -67,6 +67,10 @@ function readImageSize(file: string): { width: number; height: number } | null {
  * Si no hay ninguna, devuelve null y se muestra la portada ilustrada.
  */
 export function getBookCover(book: Book): BookCoverImage | null {
+  // 0. Foto subida desde el panel (/admin/libros): gana sobre las del código.
+  if (book.tapa) {
+    return { src: `/api/tapas/${book.id}-${book.tapa.v}.jpg`, ratio: Math.min(0.8, Math.max(0.55, book.tapa.ratio)) };
+  }
   const candidates = book.imagen ? [book.imagen] : EXTENSIONS.map((ext) => `/images/libros/${book.id}.${ext}`);
   for (const rel of candidates) {
     const file = path.join(process.cwd(), 'public', rel.replace(/^\//, ''));

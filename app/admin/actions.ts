@@ -14,6 +14,7 @@ import type { OrderStatus } from '@/lib/orderTypes';
 import { getOrigin } from '@/lib/origin';
 import { adjustStock, releaseStock, reserveStock, setStock } from '@/lib/stock';
 import { getBook } from '@/data/books';
+import { loadCatalog } from '@/lib/catalog';
 
 export interface ActionState {
   ok?: boolean;
@@ -107,6 +108,7 @@ export async function changeStock(form: FormData) {
   if (!(await isAdmin())) redirect('/admin/pedidos');
   const id = String(form.get('id') ?? '');
   const delta = Number(form.get('delta'));
+  await loadCatalog();
   if (!getBook(id) || !Number.isInteger(delta) || Math.abs(delta) > 1000) return;
   await adjustStock(id, delta);
   revalidatePath('/', 'layout');
@@ -118,6 +120,7 @@ export async function saveStock(_prev: ActionState, form: FormData): Promise<Act
   const id = String(form.get('id') ?? '');
   const raw = String(form.get('units') ?? '').trim();
   const units = Number(raw);
+  await loadCatalog();
   if (!getBook(id)) return { error: 'Libro inexistente.' };
   if (raw === '' || !Number.isInteger(units) || units < 0 || units > 100000) return { error: 'Poné un número entero, 0 o más.' };
   await setStock(id, units);
@@ -184,6 +187,7 @@ export async function setBookReviewStatus(form: FormData) {
   if (!f) return;
   await feedbackStore.save({ ...f, books: f.books.map((b) => (b.bookId === bookId ? { ...b, status } : b)) });
   revalidatePath('/admin/opiniones');
+  await loadCatalog();
   if (getBook(bookId)) revalidatePath(`/catalogo/${bookId}`);
 }
 

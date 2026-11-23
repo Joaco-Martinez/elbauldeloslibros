@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { getBook } from '@/data/books';
+import { fullTitle, getBook } from '@/data/books';
 import { isCordobaCapital, isLocalDelivery, shippingModeOf, type Delivery } from '@/lib/delivery';
 import { MAX_QTY_PER_BOOK } from '@/lib/limits';
 import type { Customer, Order, OrderStatus, Shipping } from '@/lib/orderTypes';
@@ -98,7 +98,7 @@ export function createOrder(items: LineInput[], customer: Customer, method: Paym
     customer,
     lines: totals.lines.map((l) => ({
       id: l.book.id,
-      title: l.book.title,
+      title: fullTitle(l.book), // "Título (tapa dura)" si tiene formato
       author: l.book.author,
       qty: l.qty,
       unitPrice: l.book.price,

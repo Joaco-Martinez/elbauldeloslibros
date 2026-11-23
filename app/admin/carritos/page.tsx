@@ -4,10 +4,11 @@ import { discardCart, markCartContacted } from '@/app/admin/actions';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { PageHero } from '@/components/checkout/PageHero';
 import { WaveDivider } from '@/components/ui/WaveDivider';
-import { getBook } from '@/data/books';
+import { fullTitle, getBook } from '@/data/books';
 import { ABANDONED_AFTER_MS, cartStore, restoreCartUrl, type AbandonedCart } from '@/lib/abandonedCarts';
 import { customerWhatsappUrl } from '@/lib/adminQueue';
 import { isAdmin } from '@/lib/adminAuth';
+import { loadCatalog } from '@/lib/catalog';
 import { formatPrice } from '@/lib/formatPrice';
 import { formatDateTime } from '@/lib/orderStatus';
 import { getOrigin } from '@/lib/origin';
@@ -26,7 +27,7 @@ function ageText(ms: number) {
 function cartLines(cart: AbandonedCart) {
   return cart.items.flatMap((i) => {
     const book = getBook(i.id);
-    return book ? [{ id: i.id, title: book.title, qty: i.qty, subtotal: book.price * i.qty }] : [];
+    return book ? [{ id: i.id, title: fullTitle(book), qty: i.qty, subtotal: book.price * i.qty }] : [];
   });
 }
 
@@ -42,6 +43,7 @@ function messageFor(cart: AbandonedCart, link: string) {
 
 export default async function CarritosPage() {
   if (!(await isAdmin())) redirect('/admin/pedidos');
+  await loadCatalog();
 
   const now = Date.now();
   const origin = await getOrigin();

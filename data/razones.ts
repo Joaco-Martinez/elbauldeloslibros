@@ -125,6 +125,12 @@ export const razones: Record<string, [Razon, Razon, Razon, Razon]> = {
     { titulo: 'Leído en todo el mundo', texto: 'Traducido a decenas de idiomas, emociona a lectores de todas las edades.' },
     { titulo: 'El regalo perfecto', texto: 'Un libro que siempre cae bien y que muchos releen cada tanto.' },
   ],
+  'el-alquimista-tapa-dura': [
+    { titulo: 'Una edición para guardar', texto: 'Tapa dura, más resistente y linda para tener en la biblioteca o regalar.' },
+    { titulo: 'Una fábula para leer de un tirón', texto: 'Breve, luminosa y fácil de leer, aunque no seas de leer mucho.' },
+    { titulo: 'Animate a tus sueños', texto: 'Santiago te recuerda que vale la pena salir a buscar lo que querés.' },
+    { titulo: 'Leído en todo el mundo', texto: 'Traducido a decenas de idiomas, emociona a lectores de todas las edades.' },
+  ],
   'el-hombre-en-busca-de-sentido': [
     { titulo: 'Un testimonio real', texto: 'Frankl sobrevivió a los campos de concentración y lo cuenta en primera persona.' },
     { titulo: 'Sentido incluso en lo peor', texto: 'Muestra que siempre podemos elegir cómo enfrentar lo que nos pasa.' },
@@ -141,4 +147,10 @@ export const razones: Record<string, [Razon, Razon, Razon, Razon]> = {
   ],
 };
 
-export const getRazones = (id: string) => razones[id];
+/** Razones escritas en el panel (/admin/libros): reemplazan a las de arriba. Las carga data/books.ts. */
+let razonesDelPanel: Record<string, [Razon, Razon, Razon, Razon]> = {};
+export function setCustomRazones(map: Record<string, [Razon, Razon, Razon, Razon]>) {
+  razonesDelPanel = map;
+}
+
+export const getRazones = (id: string): [Razon, Razon, Razon, Razon] | undefined => razonesDelPanel[id] ?? razones[id];

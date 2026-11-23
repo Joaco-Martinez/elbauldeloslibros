@@ -17,6 +17,13 @@ interface ProductCardProps {
   tone?: Tone;
 }
 
+/** ["Tapa blanda", "Tapa dura"] → "Tapa blanda y tapa dura" */
+function editionsText(list: string[]) {
+  const [first, ...rest] = list;
+  if (!rest.length) return first;
+  return `${[first, ...rest.slice(0, -1).map((s) => s.toLowerCase())].join(', ')} y ${rest[rest.length - 1].toLowerCase()}`;
+}
+
 const ALTERNATIVE: Partial<Record<Tone, Tone>> = { cream: 'beige', mustard: 'cream', forest: 'brick', brick: 'forest' };
 
 export function ProductCard({ book, surface, badge, tone }: ProductCardProps) {
@@ -24,13 +31,15 @@ export function ProductCard({ book, surface, badge, tone }: ProductCardProps) {
   const card = own === surface ? (ALTERNATIVE[surface] ?? 'cream') : own;
   const dark = isDarkTone(card);
   const text = dark ? 'text-cream' : 'text-ink';
+  // Tapa blanda y tapa dura del mismo título: una tarjeta con "Desde" (la página tiene el selector).
+  const multi = (book.ediciones?.length ?? 0) > 1;
 
   return (
     <Link
       href={`/catalogo/${book.id}`}
       className={`product-card focus-ring group flex h-full flex-col rounded-card ${bgTone[card]} ${text}`}
       style={{ '--ring': dark ? 'var(--color-cream)' : 'var(--color-forest)' } as CSSProperties}
-      aria-label={`${book.title}${book.author ? `, de ${book.author}` : ''}. ${formatPrice(book.precioTransferencia)} con transferencia, ${formatPrice(book.price)} con Mercado Pago${badge ? `. ${badge}` : ''}`}
+      aria-label={`${book.title}${book.author ? `, de ${book.author}` : ''}${multi ? `. ${editionsText(book.ediciones!)}` : ''}. ${multi ? 'Desde ' : ''}${formatPrice(book.precioTransferencia)} con transferencia, ${formatPrice(book.price)} con Mercado Pago${badge ? `. ${badge}` : ''}`}
     >
       {/* La zona del libro tiene su propia proporción: el texto de abajo nunca achica la tapa. */}
       <div className="relative flex aspect-[5/6] items-end justify-center pb-[9%] pt-[13%]">
@@ -56,9 +65,15 @@ export function ProductCard({ book, surface, badge, tone }: ProductCardProps) {
       <div className="flex flex-1 flex-col px-3 pb-3 md:px-3.5 md:pb-3.5">
         <p className="line-clamp-2 text-[12px] font-bold leading-tight md:line-clamp-1 md:text-[13px]">{book.title}</p>
         {book.author && <p className="mt-0.5 truncate text-[11px] font-medium leading-tight">{book.author}</p>}
+        {multi ? (
+          <p className="mt-1 truncate text-[11px] font-bold leading-tight">{editionsText(book.ediciones!)}</p>
+        ) : (
+          book.formato === 'Tapa dura' && <p className="mt-1 truncate text-[11px] font-bold leading-tight">Tapa dura</p>
+        )}
         {/* mt-auto: el precio queda abajo de todo, alineado en toda la fila aunque el título ocupe 1 o 2 renglones. */}
         <div className="mt-auto pt-2">
           <p className="leading-tight">
+            {multi && <span className="mr-1 text-[11px] font-bold">Desde</span>}
             <span className="text-[15px] font-bold md:text-[16px]">{formatPrice(book.precioTransferencia)}</span>
             <span className="block text-[11px] font-bold sm:ml-1.5 sm:inline">con transferencia</span>
           </p>
