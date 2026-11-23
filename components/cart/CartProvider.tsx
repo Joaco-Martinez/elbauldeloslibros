@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { applyCustomCatalog, getBook, type CustomCatalog } from '@/data/books';
 import type { BookCoverImage } from '@/lib/bookImage';
 
+import { analyticsItems, track } from '@/lib/analytics';
 import { MAX_QTY_PER_BOOK } from '@/lib/limits';
 
 export const MAX_QTY = MAX_QTY_PER_BOOK;
@@ -148,6 +149,7 @@ export function CartProvider({
 
   const add = useCallback((id: string, qty = 1) => {
     if (!getBook(id) || maxFor(id) === 0) return;
+    track('add_to_cart', { items: analyticsItems([{ id, qty }]) });
     setItems((prev) => {
       const found = prev.find((i) => i.id === id);
       if (found) return prev.map((i) => (i.id === id ? { ...i, qty: clampQty(id, i.qty + qty) } : i));

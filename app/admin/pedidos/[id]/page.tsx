@@ -123,6 +123,34 @@ export default async function AdminPedidoPage({ params }: { params: Promise<{ id
             </div>
           )}
 
+          {/* Comprobante de transferencia subido desde la web. */}
+          {order.method === 'transferencia' && (
+            <div
+              className={`mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-card px-5 py-4 text-[14px] ${
+                order.receiptAt ? 'bg-forest text-cream' : 'bg-beige'
+              }`}
+            >
+              {order.receiptAt ? (
+                <>
+                  <p className="font-bold">✓ Subió el comprobante el {formatDateTime(order.receiptAt)}.</p>
+                  <a
+                    href={`/api/admin/comprobante/${encodeURIComponent(order.id)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn h-10 bg-mustard px-4 text-[13px] text-forest"
+                  >
+                    Ver comprobante
+                  </a>
+                  <p className="w-full text-[13px] font-medium">
+                    Fijate que la plata haya entrado y pasá el pedido a &quot;Pago confirmado&quot;.
+                  </p>
+                </>
+              ) : (
+                <p className="font-bold">Todavía no subió el comprobante por la web (puede habértelo mandado por WhatsApp).</p>
+              )}
+            </div>
+          )}
+
           <div className="mt-8 grid gap-y-10 lg:grid-cols-12 lg:gap-x-6">
             <div className="space-y-10 lg:col-span-7">
               <StatusForm order={order} />

@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { booksInCategory, categories } from '@/data/books';
 import { getAvailableBooks } from '@/lib/stock';
 import { absoluteUrl } from '@/lib/seo';
 
@@ -18,6 +19,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
   return [
     ...pages.map((p) => ({ url: absoluteUrl(p.path), changeFrequency: p.changeFrequency, priority: p.priority })),
+    ...categories
+      .filter((c) => booksInCategory(c.id, books).length > 0)
+      .map((c) => ({ url: absoluteUrl(`/catalogo/${c.id}`), changeFrequency: 'weekly' as const, priority: 0.7 })),
     ...books.map((b) => ({
       url: absoluteUrl(`/catalogo/${b.id}`),
       changeFrequency: 'weekly' as const,

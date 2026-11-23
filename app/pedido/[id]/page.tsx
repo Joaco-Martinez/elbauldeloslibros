@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PageHero } from '@/components/checkout/PageHero';
 import { OrderSummary } from '@/components/pedido/OrderSummary';
-import { ReceiptButton } from '@/components/pedido/ReceiptButton';
+import { ReceiptUpload } from '@/components/pedido/ReceiptUpload';
 import { Timeline } from '@/components/pedido/Timeline';
 import { WaveDivider } from '@/components/ui/WaveDivider';
 import { Button } from '@/components/ui/Button';
@@ -64,7 +64,7 @@ export default async function PedidoPage({ params, searchParams }: Props) {
             )}
             {needsReceipt && (
               <div className="mt-8">
-                <ReceiptButton orderId={order.id} total={order.total} />
+                <ReceiptUpload orderId={order.id} token={order.token} total={order.total} alreadySent={Boolean(order.receiptAt)} />
               </div>
             )}
             <p className="mt-10 text-[14px] font-medium">

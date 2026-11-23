@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { SocialLinks } from '@/components/layout/SocialLinks';
-import { ReceiptButton } from '@/components/pedido/ReceiptButton';
+import { ReceiptUpload } from '@/components/pedido/ReceiptUpload';
 import { CopyRow } from '@/components/ui/CopyRow';
 import { formatPrice } from '@/lib/formatPrice';
 import { WHATSAPP_DISPLAY, transferInfoComplete, transferRows } from '@/lib/site';
@@ -46,15 +46,15 @@ export function TransferConfirmation({ result }: { result: TransferResult }) {
           )}
         </li>
         <li className="rounded-card bg-beige p-5 md:p-6">
-          <p className="text-[15px] font-bold">2. Mandanos el comprobante por WhatsApp</p>
+          <p className="text-[15px] font-bold">2. Subí el comprobante acá</p>
           <p className="mt-1 text-[14px] font-medium leading-[1.45]">
-            Al {WHATSAPP_DISPLAY}, con tu número de pedido <strong>{result.orderId}</strong>. El mensaje ya va escrito: solo adjuntá
-            la captura. Sin el comprobante no podemos confirmar el pedido.
+            Con eso confirmamos tu pedido <strong>{result.orderId}</strong>. También lo podés subir después desde el link de
+            seguimiento que te llega por mail.
           </p>
           <p className="mt-2 text-[14px] font-bold">
             Te reservamos los libros por 24 h. Si no nos llega el comprobante, se liberan para otra persona.
           </p>
-          <ReceiptButton orderId={result.orderId} total={result.total} className="mt-4" />
+          <ReceiptUpload orderId={result.orderId} token={result.token} total={result.total} className="mt-4" />
         </li>
       </ol>
 

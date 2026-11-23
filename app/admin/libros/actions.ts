@@ -32,7 +32,7 @@ function newId(title: string, formato?: string) {
   // Si es tapa dura de un título que ya está, la dirección queda "titulo-tapa-dura".
   title = formato ? `${title} ${formato}` : title;
   const base = slugify(title) || 'libro';
-  const taken = (id: string) => id === 'nuevo' || books.some((b) => b.id === id);
+  const taken = (id: string) => id === 'nuevo' || books.some((b) => b.id === id) || categories.some((c) => c.id === id);
   if (!taken(base)) return base;
   for (let n = 2; ; n++) if (!taken(`${base}-${n}`)) return `${base}-${n}`;
 }

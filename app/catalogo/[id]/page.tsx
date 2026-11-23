@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { books, editionsOf, getBook, getCategory, oneCardPerTitle, relatedBooks } from '@/data/books';
+import { books, categories, editionsOf, getBook, getCategory, oneCardPerTitle, relatedBooks } from '@/data/books';
+import { GenrePage, SORTS } from '@/components/catalogo/GenrePage';
 import { getRazones } from '@/data/razones';
 import { getStockMap, isAvailable } from '@/lib/stock';
 import { BookHero } from '@/components/libro/BookHero';
@@ -13,16 +14,29 @@ import { bookReviews } from '@/lib/reviews';
 import { getBookCover } from '@/lib/bookImage';
 import { JsonLd, bookJsonLd, breadcrumbJsonLd, pageSeo } from '@/lib/seo';
 
-type Params = { params: Promise<{ id: string }> };
+type Params = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-// Los libros del código se arman de antemano; los cargados en el panel, en el momento.
+/** /catalogo/<id> es la página de un libro o, si el id es de un género, la página de ese género. */
+const findCategory = (id: string) => categories.find((c) => c.id === id);
+
+// Los libros y géneros del código se arman de antemano; los cargados en el panel, en el momento.
 export function generateStaticParams() {
-  return books.map((b) => ({ id: b.id }));
+  return [...books.map((b) => ({ id: b.id })), ...categories.map((c) => ({ id: c.id }))];
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   await loadCatalog();
-  const book = getBook((await params).id);
+  const { id } = await params;
+  const genre = findCategory(id);
+  if (genre) {
+    const title = `Libros de ${genre.label}`;
+    const description = `${genre.blurb ? `${genre.blurb} ` : ''}Libros nuevos de ${genre.label.toLowerCase()} con envío a toda la Argentina.`;
+    return { title, description, ...pageSeo(`/catalogo/${genre.id}`, { title, description }) };
+  }
+  const book = getBook(id);
   if (!book) return {};
   const title = book.author ? `${book.title}, de ${book.author}` : book.title;
   const description = `${book.sinopsis} Libro nuevo con envío a toda la Argentina.`;
@@ -38,13 +52,22 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function LibroPage({ params }: Params) {
+export default async function LibroPage({ params, searchParams }: Params) {
   await loadCatalog();
-  const book = getBook((await params).id);
+  const { id } = await params;
+  const stock = await getStockMap();
+
+  const genre = findCategory(id);
+  if (genre) {
+    const raw = (await searchParams).orden;
+    const sort = SORTS.find((s) => s.id === raw)?.id ?? 'recomendados';
+    return <GenrePage category={genre} available={books.filter((b) => isAvailable(stock[b.id]))} stock={stock} sort={sort} />;
+  }
+
+  const book = getBook(id);
   if (!book) notFound();
 
   // Sin stock: la página no existe hasta que se carguen unidades en el panel.
-  const stock = await getStockMap();
   const units = stock[book.id];
   if (!isAvailable(units)) notFound();
   const inStock = books.filter((b) => isAvailable(stock[b.id]));
@@ -66,6 +89,7 @@ export default async function LibroPage({ params }: Params) {
           breadcrumbJsonLd([
             { name: 'Inicio', path: '/' },
             { name: 'Catálogo', path: '/catalogo' },
+            { name: getCategory(book.category).label, path: `/catalogo/${book.category}` },
             { name: book.title, path: `/catalogo/${book.id}` },
           ]),
         ]}

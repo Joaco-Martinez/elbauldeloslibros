@@ -81,6 +81,45 @@ export async function notifyNewOrder(order: Order, origin: string): Promise<{ sh
   return { shop, customer };
 }
 
+/** El cliente subió el comprobante de transferencia: aviso al negocio con el archivo adjunto. */
+export async function notifyReceipt(
+  order: Order,
+  origin: string,
+  file: { name: string; mime: string; data: string },
+): Promise<MailResult> {
+  const cfg = config();
+  const subject = `Comprobante de transferencia · ${order.id} · ${order.customer.nombre}`;
+  const text = [
+    `${order.customer.nombre} subió el comprobante del pedido ${order.id} ($ ${order.total.toLocaleString('es-AR')}).`,
+    'Revisá que la plata haya entrado y confirmá el pago desde el panel:',
+    `${origin}/admin/pedidos/${encodeURIComponent(order.id)}`,
+  ].join('\n');
+  if (!cfg) {
+    console.warn(`[comprobante] Mails sin configurar · ${subject}`);
+    return 'skipped';
+  }
+  try {
+    transporter ??= nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: { user: cfg.user, pass: cfg.pass },
+    });
+    await transporter.sendMail({
+      from: cfg.from,
+      to: cfg.shop,
+      subject,
+      text,
+      replyTo: order.customer.email,
+      attachments: [{ filename: file.name, content: Buffer.from(file.data, 'base64'), contentType: file.mime }],
+    });
+    return 'sent';
+  } catch (err) {
+    console.error('[comprobante] No se pudo avisar al negocio', err);
+    return 'failed';
+  }
+}
+
 /** Arrepentimiento: constancia con el código al cliente (Res. SCI 424/2020: dentro de 24 h) + aviso al negocio. */
 export async function notifyWithdrawal(w: Withdrawal): Promise<MailResult> {
   const cfg = config();

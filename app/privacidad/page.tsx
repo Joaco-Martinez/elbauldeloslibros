@@ -69,10 +69,22 @@ export default function PrivacidadPage() {
       </p>
 
       <h2>Cookies</h2>
-      <p>
-        No usamos cookies de publicidad ni de seguimiento. Tu navegador guarda tu carrito para que no lo pierdas si cerrás
-        la página.
-      </p>
+      {/* El texto depende de si la medición está activada (variables NEXT_PUBLIC_GA_ID / NEXT_PUBLIC_META_PIXEL_ID). */}
+      {process.env.NEXT_PUBLIC_GA_ID || process.env.NEXT_PUBLIC_META_PIXEL_ID ? (
+        <p>
+          Tu navegador guarda tu carrito para que no lo pierdas si cerrás la página. Además usamos
+          {process.env.NEXT_PUBLIC_GA_ID && ' Google Analytics'}
+          {process.env.NEXT_PUBLIC_GA_ID && process.env.NEXT_PUBLIC_META_PIXEL_ID && ' y'}
+          {process.env.NEXT_PUBLIC_META_PIXEL_ID && ' el píxel de Meta (Facebook e Instagram)'} para medir cuántas personas
+          visitan la tienda y qué libros miran o compran, sin guardar tu nombre ni tus datos de contacto. Podés bloquearlas
+          desde la configuración de tu navegador.
+        </p>
+      ) : (
+        <p>
+          No usamos cookies de publicidad ni de seguimiento. Tu navegador guarda tu carrito para que no lo pierdas si cerrás
+          la página.
+        </p>
+      )}
 
       <h2>Tus derechos</h2>
       <p>

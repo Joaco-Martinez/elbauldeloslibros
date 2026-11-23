@@ -34,6 +34,9 @@ export function OrderRow({ order: o, alert }: { order: Order; alert: Alert | nul
         <span className="text-[13px] font-medium">
           {o.method === 'transferencia' ? 'Transferencia' : 'Mercado Pago'}
           <span className="block text-[12px]">{DELIVERY_LABEL[o.delivery ?? 'envio']}</span>
+          {o.method === 'transferencia' && o.receiptAt && o.status === 'recibido' && (
+            <span className="mt-1 inline-block rounded-full bg-forest px-2 py-0.5 text-[11px] font-bold text-cream">Comprobante ✓</span>
+          )}
         </span>
         <span className="text-[14px] font-bold">{formatPrice(o.total)}</span>
         <span className={`justify-self-start rounded-full px-3 py-1 text-[12px] font-bold ${STATUS_BADGE[o.status]}`}>

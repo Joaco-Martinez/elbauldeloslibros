@@ -6,6 +6,7 @@ import { useCallback, useRef, useState, type CSSProperties } from 'react';
 import { BRAND, NAV_LINKS, externalProps, isActive } from '@/lib/nav';
 import { useCart } from '@/components/cart/CartProvider';
 import { MobileMenu } from './MobileMenu';
+import { SearchDialog } from './SearchDialog';
 
 export type HeaderTheme = {
   bg: string;
@@ -24,8 +25,14 @@ export function Header() {
   const pathname = usePathname();
   const theme = THEMES[pathname?.startsWith('/nosotros') ? 'mustard' : 'rust'];
   const [open, setOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { count, open: openCart } = useCart();
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLButtonElement>(null);
+  const closeSearch = useCallback(() => {
+    setSearchOpen(false);
+    window.setTimeout(() => searchRef.current?.focus(), 0);
+  }, []);
 
   const close = useCallback(() => {
     setOpen(false);
@@ -68,6 +75,20 @@ export function Header() {
           </nav>
 
           <button
+            ref={searchRef}
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-haspopup="dialog"
+            aria-label="Buscar libros"
+            className="focus-ring grid h-10 w-10 place-items-center rounded-full"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="M15.5 15.5L20 20" />
+            </svg>
+          </button>
+
+          <button
             type="button"
             onClick={openCart}
             aria-haspopup="dialog"
@@ -94,6 +115,7 @@ export function Header() {
       </div>
 
       <MobileMenu open={open} onClose={close} theme={theme} pathname={pathname} />
+      <SearchDialog open={searchOpen} onClose={closeSearch} />
     </header>
   );
 }

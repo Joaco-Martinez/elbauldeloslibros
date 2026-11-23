@@ -54,7 +54,7 @@ export function stepDetail(status: OrderStatus, order: OrderLike): string {
     case 'recibido': {
       const pay =
         order.method === 'transferencia'
-          ? 'Para avanzar, mandanos el comprobante de la transferencia por WhatsApp con tu número de pedido. Te reservamos los libros por 24 h.'
+          ? 'Para avanzar, subí el comprobante de la transferencia desde esta página (o mandalo por WhatsApp). Te reservamos los libros por 24 h.'
           : 'Estamos esperando la confirmación de Mercado Pago. Te reservamos los libros por 24 h.';
       if (order.delivery === 'retiro') return `${pay} Después te escribimos para coordinar el retiro.`;
       if (order.delivery === 'uber') return `${pay} Después te escribimos para coordinar el Uber Moto.`;
