@@ -15,6 +15,8 @@ import { getMomentos } from '@/data/momentos';
 import { computeTotals } from '@/lib/pricing';
 import { BuyBar } from './BuyBar';
 import { FormatSeal } from './FormatSeal';
+import { ShareBook } from './ShareBook';
+import { SITE_URL } from '@/lib/seo';
 import type { CSSProperties } from 'react';
 
 interface BookHeroProps {
@@ -195,6 +197,7 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
                 <AddToCartButton bookId={book.id} className="w-full sm:w-auto" />
                 <BuyNowButton bookId={book.id} className="w-full sm:w-auto" />
               </div>
+              <ShareBook url={`${SITE_URL}/catalogo/${book.id}`} title={fullTitle(book)} author={book.author} />
               <ul className="mt-8 grid w-full max-w-[460px] grid-cols-3 divide-x-[1.5px] divide-cream rounded-[18px] border-[1.5px] border-cream">
                 {(
                   [
