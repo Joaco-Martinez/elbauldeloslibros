@@ -38,7 +38,9 @@ export async function login(_prev: ActionState, form: FormData): Promise<ActionS
   }
   failedAttempts = 0;
   await startSession();
-  redirect('/admin/pedidos');
+  // Solo páginas del panel (evita redirigir a otro sitio con un "next" armado).
+  const next = String(form.get('next') ?? '');
+  redirect(/^\/admin\/[a-z-]+$/.test(next) ? next : '/admin/pedidos');
 }
 
 export async function logout() {

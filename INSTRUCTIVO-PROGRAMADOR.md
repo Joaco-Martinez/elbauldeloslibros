@@ -217,6 +217,23 @@ Límites de Gmail: unos **500 mails por día** (cuenta gratis). El remitente sie
 ### 6.4 Mejora opcional (no está hecha)
 Mail automático de **carrito abandonado**: hoy el panel "Carritos" arma el mensaje y el dueño lo manda a mano (WhatsApp o mail). Se podría mandar solo a las 2 h desde el mismo cron, usando `lib/abandonedCarts.ts` y una plantilla nueva en `lib/emails.ts`. Si se hace: una sola vez por carrito y respetando el aviso de privacidad del checkout.
 
+## 6 bis. Mantenimiento web (cobranza de mensualidades)
+
+El sitio está conectado al sistema de cobranza (repo `mensualidades`), igual que los otros sitios:
+- **Panel → Servicio web** (`/admin/servicio-web`): la página de pago de cobranza embebida (`<payUrl>?embed=1`). El dueño ve el monto del mes, los datos para transferir e informa el pago desde ahí.
+- **Aviso en todo el panel** cuando hay un cobro pendiente (amarillo, con la fecha de suspensión) o el sitio ya está suspendido (rojo).
+- **Suspensión automática** (`middleware.ts`): si cobranza dice `suspended: true`, la tienda muestra `/mantenimiento` con **503 + Retry-After** (Google lo toma como temporal y no saca el sitio del buscador). Siguen abiertos: `/admin`, `/pedido/*` (seguimiento), `/checkout/gracias` (vuelta de Mercado Pago), las páginas legales (el botón de arrepentimiento es obligatorio) y toda la API (webhook de Mercado Pago y cron). Con sesión del panel se ve la tienda igual.
+- Lógica en `lib/servicioWeb.ts`: consulta `GET <API>/site/<token>/status` con caché de 5 min y timeout de 4 s. **Si faltan las variables o cobranza no responde, el sitio nunca se suspende.**
+
+Variables (se copian desde cobranza → Proyectos → botón "Sitio"). Como son `NEXT_PUBLIC_`, quedan fijas en el build: después de cargarlas o cambiarlas hay que hacer **Redeploy**.
+
+| Variable | Ejemplo |
+|---|---|
+| `NEXT_PUBLIC_MENSUALIDADES_API_URL` | `https://<api-de-cobranza>/api` (termina en `/api`) |
+| `NEXT_PUBLIC_MENSUALIDADES_SITE_TOKEN` | el token del proyecto |
+
+Si algo no anda, `/admin/servicio-web` muestra el diagnóstico (faltan variables, token inválido, URL mal, cobranza caída).
+
 ## 7. Datos que faltan del negocio
 - `lib/site.ts` → `LEGAL.cuit` y `LEGAL.email` (se muestran en Términos y Privacidad cuando se completan).
 - Si el negocio está inscripto en ARCA: agregar el **QR de Data Fiscal** en el footer (`components/layout/Footer.tsx`).
