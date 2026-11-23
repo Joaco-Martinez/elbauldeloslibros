@@ -9,6 +9,8 @@ import { BookReviews } from '@/components/libro/BookReviews';
 import { RelatedBooks } from '@/components/libro/RelatedBooks';
 import { WaveDivider } from '@/components/ui/WaveDivider';
 import { bookReviews } from '@/lib/reviews';
+import { getBookCover } from '@/lib/bookImage';
+import { JsonLd, bookJsonLd, breadcrumbJsonLd, pageSeo } from '@/lib/seo';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,9 +23,17 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const book = getBook((await params).id);
   if (!book) return {};
+  const title = book.author ? `${book.title}, de ${book.author}` : book.title;
+  const description = `${book.sinopsis} Libro nuevo con envío a toda la Argentina.`;
+  const cover = getBookCover(book);
   return {
-    title: book.author ? `${book.title}, de ${book.author}` : book.title,
-    description: book.sinopsis,
+    title,
+    description,
+    ...pageSeo(`/catalogo/${book.id}`, {
+      title,
+      description,
+      ...(cover ? { image: { url: cover.src, alt: `Tapa de ${book.title}` } } : {}),
+    }),
   };
 }
 
@@ -44,6 +54,16 @@ export default async function LibroPage({ params }: Params) {
 
   return (
     <>
+      <JsonLd
+        data={[
+          bookJsonLd(book, reviews, average),
+          breadcrumbJsonLd([
+            { name: 'Inicio', path: '/' },
+            { name: 'Catálogo', path: '/catalogo' },
+            { name: book.title, path: `/catalogo/${book.id}` },
+          ]),
+        ]}
+      />
       <BookHero
         book={book}
         category={getCategory(book.category)}

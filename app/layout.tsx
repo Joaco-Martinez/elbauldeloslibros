@@ -7,8 +7,8 @@ import { CartProvider } from '@/components/cart/CartProvider';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { books } from '@/data/books';
 import { getBookCover } from '@/lib/bookImage';
+import { DEFAULT_SHARE_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import './globals.css';
-
 
 const display = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -32,12 +32,24 @@ const script = Pacifico({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'El Baul de los Libros · Libros nuevos con envío a todo el país',
     template: '%s · El Baul de los Libros',
   },
-  description:
-    'Librería online de libros nuevos con envío a domicilio a toda la Argentina. Desarrollo personal, finanzas, filosofía, espiritualidad, romance y thriller, elegidos uno por uno.',
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  // La canónica va en cada página (si se pusiera acá, la heredarían todas y Google las tomaría por el inicio).
+  openGraph: {
+    type: 'website',
+    locale: 'es_AR',
+    siteName: SITE_NAME,
+    images: [{ url: DEFAULT_SHARE_IMAGE, alt: 'Un libro abierto junto a un mate' }],
+  },
+  twitter: { card: 'summary_large_image', images: [DEFAULT_SHARE_IMAGE] },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
+  // Search Console → "Etiqueta HTML": pegar solo el valor de content="…" en GOOGLE_SITE_VERIFICATION.
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
 export const viewport: Viewport = {

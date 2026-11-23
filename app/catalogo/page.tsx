@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import type { Metadata } from 'next';
 import { booksInCategory, categories } from '@/data/books';
 import { getAvailableBooks } from '@/lib/stock';
+import { pageSeo } from '@/lib/seo';
 import { CatalogHero } from '@/components/catalogo/CatalogHero';
 import { CategorySection } from '@/components/catalogo/CategorySection';
 import { WaveDivider } from '@/components/ui/WaveDivider';
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: 'Catálogo',
   description:
     'Desarrollo personal, finanzas y negocios, filosofía, espiritualidad, romance y thriller. Libros nuevos con envío a toda la Argentina.',
+  ...pageSeo('/catalogo'),
 };
 
 export default async function CatalogoPage() {

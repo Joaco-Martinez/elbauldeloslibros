@@ -6,6 +6,7 @@ import { WHATSAPP_DISPLAY, WITHDRAWAL_DAYS, whatsappUrl } from '@/lib/site';
 export const metadata: Metadata = {
   title: 'Cambios y devoluciones',
   description: 'Hacemos cambios y devoluciones cuando el libro llega con un defecto de fábrica o impresión, o si nos equivocamos de título.',
+  alternates: { canonical: '/cambios-y-devoluciones' },
 };
 
 export default function CambiosPage() {
