@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { books, getBook, type Book } from '@/data/books';
+import { loadCatalog } from '@/lib/catalog';
 import { upstashConfig, upstashPipeline } from '@/lib/upstash';
 
 /**
@@ -84,7 +85,8 @@ const effective = (book: Book, map: StockMap): Units => (book.id in map ? map[bo
 
 /** Stock de todos los libros del catálogo. */
 export async function getStockMap(): Promise<Record<string, Units>> {
-  const map = await backend.all();
+  // Libros cargados en el panel: se suman al catálogo antes de armar el mapa.
+  const [map] = await Promise.all([backend.all(), loadCatalog()]);
   return Object.fromEntries(books.map((b) => [b.id, effective(b, map)]));
 }
 
@@ -97,12 +99,14 @@ export async function getAvailableBooks(): Promise<Book[]> {
 }
 
 export async function setStock(id: string, units: number) {
+  await loadCatalog();
   if (!getBook(id)) throw new Error('Libro inexistente');
   await backend.set(id, Math.max(0, Math.floor(units)));
 }
 
 /** Suma o resta desde el panel (nunca baja de 0). Si el libro estaba sin controlar, arranca desde 0. */
 export async function adjustStock(id: string, delta: number) {
+  await loadCatalog();
   const book = getBook(id);
   if (!book) throw new Error('Libro inexistente');
   const map = await backend.all();
@@ -117,7 +121,7 @@ type ReserveResult = { ok: true; reserved: { id: string; qty: number }[] } | { o
  * Devuelve qué se descontó (para devolverlo si el pedido se cancela).
  */
 export async function reserveStock(lines: { id: string; qty: number; title: string }[]): Promise<ReserveResult> {
-  const map = await backend.all();
+  const [map] = await Promise.all([backend.all(), loadCatalog()]);
   const reserved: { id: string; qty: number }[] = [];
 
   const rollback = async () => {

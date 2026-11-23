@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { getBook } from '@/data/books';
+import { applyCustomCatalog, getBook, type CustomCatalog } from '@/data/books';
 import type { BookCoverImage } from '@/lib/bookImage';
 
 import { MAX_QTY_PER_BOOK } from '@/lib/limits';
@@ -73,7 +73,17 @@ function readCartLink(): CartItem[] | null {
   }
 }
 
-export function CartProvider({ children, images }: { children: ReactNode; images: Record<string, BookCoverImage | null> }) {
+export function CartProvider({
+  children,
+  images,
+  customCatalog,
+}: {
+  children: ReactNode;
+  images: Record<string, BookCoverImage | null>;
+  /** Libros y secciones cargados en el panel: se suman al catálogo del navegador antes de que se dibuje el carrito. */
+  customCatalog: CustomCatalog;
+}) {
+  applyCustomCatalog(customCatalog);
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [isOpen, setIsOpen] = useState(false);

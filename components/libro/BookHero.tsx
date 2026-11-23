@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { Book, Category } from '@/data/books';
+import { fullTitle, type Book, type Category } from '@/data/books';
 import { AddToCartButton } from '@/components/cart/AddToCartButton';
 import { BookImage } from '@/components/ui/BookImage';
 import { Attention } from '@/components/ui/Attention';
@@ -13,6 +13,7 @@ import { bookRatio } from '@/lib/bookImage';
 import { getMomentos } from '@/data/momentos';
 import { computeTotals } from '@/lib/pricing';
 import { BuyBar } from './BuyBar';
+import { FormatSeal } from './FormatSeal';
 import type { CSSProperties } from 'react';
 
 interface BookHeroProps {
@@ -24,6 +25,8 @@ interface BookHeroProps {
   units?: number | null;
   /** Promedio de reseñas aprobadas (si hay). */
   rating?: { average: number; count: number };
+  /** Otras ediciones con stock del mismo título (incluye esta), si hay más de una. */
+  editions?: Book[];
 }
 
 const LOW_STOCK = 3;
@@ -31,7 +34,7 @@ const LOW_STOCK = 3;
 /** El panel no puede ser del mismo color que el fondo del hero. */
 const panelTone = (card: Tone): Tone => (card === 'brick' || card === 'rust' ? 'mustard' : card);
 
-export function BookHero({ book, category, next = 'orange', units = null, rating }: BookHeroProps) {
+export function BookHero({ book, category, next = 'orange', units = null, rating, editions }: BookHeroProps) {
   const lowStock = units !== null && units > 0 && units <= LOW_STOCK;
   const ratio = bookRatio(book);
   const momentos = getMomentos(book.id);
@@ -77,7 +80,12 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
               >
                 <div className="relative h-full" style={{ aspectRatio: `${ratio}` }}>
                   <span className="contact-shadow !-bottom-3 !h-6 !w-[115%]" aria-hidden="true" />
-                  <Book3D spineColor={toneVar(book.colorDePortada)} ratio={ratio} className="relative z-10 h-full">
+                  <Book3D
+                    spineColor={toneVar(book.colorDePortada)}
+                    ratio={ratio}
+                    hard={book.formato === 'Tapa dura'}
+                    className="relative z-10 h-full"
+                  >
                     <BookImage
                       book={book}
                       priority
@@ -90,7 +98,12 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
               </div>
               <Sticker variant="sun" size={56} rotate={-12} className="-left-3 -top-4" />
               <Sticker variant="checker" size={52} rotate={10} className="-right-1 bottom-[10%] md:-right-3" delay={1.4} />
-              <Sticker variant="flower" size={26} rotate={6} className="right-[14%] -top-2" delay={2.2} />
+              {/* Sello con el formato (tapa blanda / tapa dura). */}
+              {book.formato ? (
+                <FormatSeal formato={book.formato} className="-right-3 -top-6 md:-right-5 md:-top-7" />
+              ) : (
+                <Sticker variant="flower" size={26} rotate={6} className="right-[14%] -top-2" delay={2.2} />
+              )}
             </div>
 
             <div className="min-w-0 md:col-span-6 lg:col-span-6 lg:col-start-7">
@@ -99,7 +112,13 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
               <h1 id="libro-title" className="display t-book md:mt-3">
                 {book.title}.
               </h1>
-              {book.author && <p className="mt-4 text-[16px] font-medium">de {book.author}</p>}
+              {(book.author || book.formato) && (
+                <p className="mt-4 text-[16px] font-medium">
+                  {book.author && `de ${book.author}`}
+                  {book.author && book.formato && ' · '}
+                  {book.formato}
+                </p>
+              )}
               {rating && (
                 <a
                   href="#resenas"
@@ -109,6 +128,32 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
                   <StarRating value={rating.average} size={15} />
                   {String(rating.average).replace('.', ',')} · {rating.count} {rating.count === 1 ? 'reseña' : 'reseñas'}
                 </a>
+              )}
+              {editions && (
+                <nav aria-label="Ediciones" className="mt-6">
+                  <p className="text-[13px] font-bold">Elegí la edición:</p>
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {editions.map((e) => {
+                      const current = e.id === book.id;
+                      return (
+                        <li key={e.id}>
+                          <Link
+                            href={`/catalogo/${e.id}`}
+                            scroll={false}
+                            aria-current={current ? 'page' : undefined}
+                            className={`focus-ring flex flex-col rounded-[14px] border-2 px-4 py-2 leading-tight ${
+                              current ? 'border-cream bg-cream text-forest' : 'border-cream hover:bg-cream hover:text-forest'
+                            }`}
+                            style={{ '--ring': 'var(--color-cream)' } as CSSProperties}
+                          >
+                            <span className="text-[14px] font-bold">{e.formato ?? 'Otra edición'}</span>
+                            <span className="text-[12px] font-medium">{formatPrice(e.precioTransferencia)} transf.</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </nav>
               )}
               <p className="display mt-6 text-[clamp(2rem,3.5vw,3rem)]">{formatPrice(book.price)}</p>
               <div className="relative mt-4 inline-flex -rotate-1 items-center gap-4 rounded-[18px] bg-forest py-3 pl-5 pr-4 text-cream md:gap-5 md:py-3.5 md:pl-6 md:pr-5">
@@ -180,7 +225,7 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
       </section>
       <BuyBar
         bookId={book.id}
-        title={book.title}
+        title={fullTitle(book)}
         price={formatPrice(book.price)}
         transferPrice={formatPrice(transferPrice)}
         watchId="comprar"

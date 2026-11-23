@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import type { Metadata } from 'next';
-import { booksInCategory, categories } from '@/data/books';
+import { booksInCategory, categories, oneCardPerTitle } from '@/data/books';
 import { getAvailableBooks } from '@/lib/stock';
 import { pageSeo } from '@/lib/seo';
 import { CatalogHero } from '@/components/catalogo/CatalogHero';
@@ -17,13 +17,14 @@ export const metadata: Metadata = {
 export default async function CatalogoPage() {
   // Solo libros y categorías con stock; fondos alternados crema / naranja unidos por ondas.
   const available = await getAvailableBooks();
+  // Tapa blanda y tapa dura del mismo título: una sola tarjeta ("Desde $ X").
   const sections = categories
-    .map((category) => ({ category, books: booksInCategory(category.id, available) }))
+    .map((category) => ({ category, books: oneCardPerTitle(booksInCategory(category.id, available)) }))
     .filter((s) => s.books.length > 0);
 
   return (
     <>
-      <CatalogHero />
+      <CatalogHero categories={sections.map((s) => s.category)} />
       {/* h2 oculto para mantener la jerarquía h1 → h2 → h3 */}
       <h2 className="sr-only">Categorías</h2>
       {sections.map(({ category, books }, i) => {

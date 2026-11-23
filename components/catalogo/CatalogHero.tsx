@@ -1,9 +1,10 @@
-import { categories } from '@/data/books';
+import type { Category } from '@/data/books';
 import { FilterChip } from '@/components/ui/FilterChip';
 import { Sticker } from '@/components/ui/Sticker';
 import { WaveDivider } from '@/components/ui/WaveDivider';
 
-export function CatalogHero() {
+/** `categories`: solo las secciones que tienen libros con stock (los botones saltan a cada una). */
+export function CatalogHero({ categories }: { categories: Category[] }) {
   return (
     <>
       <section aria-labelledby="catalogo-title" className="bg-brick text-cream">

@@ -8,7 +8,7 @@ import { WaveDivider } from '@/components/ui/WaveDivider';
 import { getMonthlyPicks } from '@/lib/monthlyPicks';
 import { getStockMap, isAvailable } from '@/lib/stock';
 import { lowStockBadge } from '@/lib/stockBadge';
-import { books as allBooks } from '@/data/books';
+import { books as allBooks, oneCardPerTitle } from '@/data/books';
 
 /** Con esta cantidad o menos en todos los elegidos, el subtítulo dice "Hay pocos ejemplares". */
 const FEW_COPIES = 5;
@@ -20,7 +20,7 @@ const FEW_COPIES = 5;
  */
 export async function FeaturedBooks() {
   const stock = await getStockMap();
-  const available = allBooks.filter((b) => isAvailable(stock[b.id]));
+  const available = oneCardPerTitle(allBooks.filter((b) => isAvailable(stock[b.id])));
   const { books, bySales, month, nextMonth, daysLeft } = await getMonthlyPicks(available, stock);
   if (books.length === 0) return null;
 

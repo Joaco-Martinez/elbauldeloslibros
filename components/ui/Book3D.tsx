@@ -10,6 +10,8 @@ interface Book3DProps {
   /** Ancho / alto de la tapa. */
   ratio?: number;
   className?: string;
+  /** Tapa dura: más gruesa, cartón que sobresale y lomo redondeado. */
+  hard?: boolean;
 }
 
 /**
@@ -20,7 +22,7 @@ interface Book3DProps {
  * algunos navegadores de celular recalculan mal esas unidades al tocar la pantalla y el libro "se agranda".
  * En pantallas táctiles el libro no recibe toques (no hay vista previa de imagen ni saltos).
  */
-export function Book3D({ children, spineColor, ratio = 0.68, className = '' }: Book3DProps) {
+export function Book3D({ children, spineColor, ratio = 0.68, className = '', hard = false }: Book3DProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState<{ x: number; y: number } | null>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -57,7 +59,7 @@ export function Book3D({ children, spineColor, ratio = 0.68, className = '' }: B
   return (
     <div
       ref={ref}
-      className={`book3d ${size ? '' : 'book3d--measuring'} ${className}`}
+      className={`book3d ${hard ? 'book3d--hard' : ''} ${size ? '' : 'book3d--measuring'} ${className}`}
       style={style}
       onPointerMove={onMove}
       onPointerLeave={() => setTilt(null)}

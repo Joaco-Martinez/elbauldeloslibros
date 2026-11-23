@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { logout } from '@/app/admin/actions';
 import { chargePeriod, formatDay, getServiceStatus, owedCharges } from '@/lib/servicioWeb';
 
-type Tab = 'pedidos' | 'carritos' | 'stock' | 'opiniones' | 'arrepentimientos' | 'servicio-web';
+type Tab = 'pedidos' | 'carritos' | 'libros' | 'secciones' | 'stock' | 'opiniones' | 'arrepentimientos' | 'servicio-web';
 
-/** Menú del panel: Pedidos / Carritos / Stock / … / Cerrar sesión, con el aviso de pago del servicio web. */
+/** Menú del panel: Pedidos / Carritos / Libros / Secciones / Stock / … / Cerrar sesión, con el aviso de pago del servicio web. */
 export async function AdminNav({ current }: { current: Tab }) {
   const status = await getServiceStatus();
   const owed = owedCharges(status);
@@ -23,6 +23,8 @@ export async function AdminNav({ current }: { current: Tab }) {
         <nav aria-label="Panel" className="flex flex-wrap gap-2">
           {tab('pedidos', 'Pedidos')}
           {tab('carritos', 'Carritos')}
+          {tab('libros', 'Libros')}
+          {tab('secciones', 'Secciones')}
           {tab('stock', 'Stock')}
           {tab('opiniones', 'Opiniones')}
           {tab('arrepentimientos', 'Arrepentimientos')}

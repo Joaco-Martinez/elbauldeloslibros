@@ -61,14 +61,23 @@ const momentosPorLibro: Record<string, MomentoId[]> = {
   // Espiritualidad
   'el-poder-del-ahora': ['ansiedad', 'presente'],
   'el-alquimista': ['sentido', 'leer'],
+  'el-alquimista-tapa-dura': ['sentido', 'leer'],
   'el-hombre-en-busca-de-sentido': ['sentido', 'dificil'],
 
   // Thriller y suspenso
   'la-paciente-silenciosa': ['leer'],
 };
 
+/** Momentos elegidos en el panel (/admin/libros): reemplazan a los de arriba. Los carga data/books.ts. */
+let momentosDelPanel: Record<string, MomentoId[]> = {};
+export function setCustomMomentos(map: Record<string, MomentoId[]>) {
+  momentosDelPanel = map;
+}
+
+export const isMomentoId = (v: string): v is MomentoId => v in MOMENTOS;
+
 /** Solo los ids, del más fuerte al más secundario (para relacionar libros). */
-export const momentoIds = (bookId: string): MomentoId[] => momentosPorLibro[bookId] ?? [];
+export const momentoIds = (bookId: string): MomentoId[] => momentosDelPanel[bookId] ?? momentosPorLibro[bookId] ?? [];
 
 export const getMomentos = (bookId: string): { id: MomentoId; label: string }[] =>
-  (momentosPorLibro[bookId] ?? []).map((id) => ({ id, label: MOMENTOS[id] }));
+  momentoIds(bookId).map((id) => ({ id, label: MOMENTOS[id] }));

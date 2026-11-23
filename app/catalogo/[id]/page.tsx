@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { books, getBook, getCategory, relatedBooks } from '@/data/books';
+import { books, editionsOf, getBook, getCategory, oneCardPerTitle, relatedBooks } from '@/data/books';
 import { getRazones } from '@/data/razones';
 import { getStockMap, isAvailable } from '@/lib/stock';
 import { BookHero } from '@/components/libro/BookHero';
@@ -8,19 +8,20 @@ import { BookReasons } from '@/components/libro/BookReasons';
 import { BookReviews } from '@/components/libro/BookReviews';
 import { RelatedBooks } from '@/components/libro/RelatedBooks';
 import { WaveDivider } from '@/components/ui/WaveDivider';
+import { loadCatalog } from '@/lib/catalog';
 import { bookReviews } from '@/lib/reviews';
 import { getBookCover } from '@/lib/bookImage';
 import { JsonLd, bookJsonLd, breadcrumbJsonLd, pageSeo } from '@/lib/seo';
 
 type Params = { params: Promise<{ id: string }> };
 
-export const dynamicParams = false;
-
+// Los libros del código se arman de antemano; los cargados en el panel, en el momento.
 export function generateStaticParams() {
   return books.map((b) => ({ id: b.id }));
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  await loadCatalog();
   const book = getBook((await params).id);
   if (!book) return {};
   const title = book.author ? `${book.title}, de ${book.author}` : book.title;
@@ -38,6 +39,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function LibroPage({ params }: Params) {
+  await loadCatalog();
   const book = getBook((await params).id);
   if (!book) notFound();
 
@@ -45,7 +47,11 @@ export default async function LibroPage({ params }: Params) {
   const stock = await getStockMap();
   const units = stock[book.id];
   if (!isAvailable(units)) notFound();
-  const available = books.filter((b) => isAvailable(stock[b.id]));
+  const inStock = books.filter((b) => isAvailable(stock[b.id]));
+  // Ediciones del mismo título con stock (tapa blanda / tapa dura): selector en la página.
+  const editions = editionsOf(book, inStock);
+  // "Seguí leyendo": sin las otras ediciones de este libro, y una tarjeta por título.
+  const available = oneCardPerTitle(inStock.filter((b) => !book.grupo || b.grupo !== book.grupo));
 
   const reasons = getRazones(book.id);
   const { reviews, average } = await bookReviews(book.id);
@@ -69,6 +75,7 @@ export default async function LibroPage({ params }: Params) {
         category={getCategory(book.category)}
         next={reasons || hasReviews ? 'cream' : 'orange'}
         units={units ?? null}
+        editions={editions.length > 1 ? editions : undefined}
         rating={average !== null ? { average, count: reviews.length } : undefined}
       />
       {reasons ? (

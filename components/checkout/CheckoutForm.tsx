@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type FormEvent, type ReactNode } from 'react';
 import { useCart } from '@/components/cart/CartProvider';
+import { fullTitle } from '@/data/books';
 import { Attention } from '@/components/ui/Attention';
 import { Button } from '@/components/ui/Button';
 import { Sticker } from '@/components/ui/Sticker';
@@ -541,7 +542,7 @@ export function CheckoutForm() {
             {totals.lines.map((l) => (
               <li key={l.book.id} className="flex items-start justify-between gap-4">
                 <span className="font-medium">
-                  {l.qty} × {l.book.title}
+                  {l.qty} × {fullTitle(l.book)}
                 </span>
                 <span className="shrink-0 font-bold">{formatPrice(l.subtotal)}</span>
               </li>

@@ -1,26 +1,49 @@
 import type { Tone } from '@/lib/tokens';
-import { momentoIds } from './momentos';
+import { momentoIds, setCustomMomentos, type MomentoId } from './momentos';
+import { setCustomRazones, type Razon } from './razones';
 
-export type CategoryId = 'desarrollo' | 'finanzas' | 'romance' | 'filosofia' | 'espiritualidad' | 'thriller';
+/** Id de la sección (las de abajo, o las creadas desde el panel en /admin/secciones). */
+export type CategoryId = string;
 
 export interface Category {
   id: CategoryId;
   label: string;
   blurb: string;
+  /** Color de las tarjetas de los libros de esta sección (igual en todo el sitio). */
+  tone: Tone;
 }
 
-/** Orden en el que aparecen en el catálogo y en los filtros. */
-export const categories: Category[] = [
-  { id: 'desarrollo', label: 'Desarrollo personal', blurb: 'Para empezar el cambio por casa.' },
-  { id: 'finanzas', label: 'Finanzas y negocios', blurb: 'Para ordenar la plata y las ideas.' },
-  { id: 'romance', label: 'Romance', blurb: 'Para suspirar entre capítulos.' },
-  { id: 'filosofia', label: 'Filosofía', blurb: 'Para pensar despacio.' },
-  { id: 'espiritualidad', label: 'Espiritualidad', blurb: 'Para volver al presente.' },
-  { id: 'thriller', label: 'Thriller y suspenso', blurb: 'Para no poder soltarlo.' },
+/** Sección creada o editada desde el panel. Si tiene el id de una de abajo, la reemplaza. */
+export interface CustomCategory extends Category {
+  /** Posición en el catálogo (menor = más arriba). */
+  order: number;
+  createdAt: number;
+}
+
+/**
+ * Secciones base, en el orden del catálogo. Cada una con su color de tarjeta
+ * (ni crema ni naranja: se tienen que leer sobre las secciones crema y naranjas del catálogo).
+ */
+const baseCategories: Category[] = [
+  { id: 'desarrollo', label: 'Desarrollo personal', blurb: 'Para empezar el cambio por casa.', tone: 'moss' }, // verde medio: crecer
+  { id: 'finanzas', label: 'Finanzas y negocios', blurb: 'Para ordenar la plata y las ideas.', tone: 'mustard' }, // dorado
+  { id: 'romance', label: 'Romance', blurb: 'Para suspirar entre capítulos.', tone: 'brick' }, // terracota
+  { id: 'filosofia', label: 'Filosofía', blurb: 'Para pensar despacio.', tone: 'beige' }, // papel
+  { id: 'espiritualidad', label: 'Espiritualidad', blurb: 'Para volver al presente.', tone: 'forest' }, // verde bosque
+  { id: 'thriller', label: 'Thriller y suspenso', blurb: 'Para no poder soltarlo.', tone: 'ink' }, // casi negro
 ];
 
+/** Ids de las secciones de este archivo (las demás se crearon en el panel). */
+export const codeCategoryIds = new Set(baseCategories.map((c) => c.id));
+
+/** Orden en el que aparecen en el catálogo y en los filtros (base + panel; se actualiza adentro). */
+export const categories: Category[] = baseCategories.map((c) => ({ ...c }));
+
+/** Orden por defecto de una sección base (para mezclarlas con las del panel). */
+export const baseCategoryOrder = (id: string) => baseCategories.findIndex((c) => c.id === id) * 10;
+
 /** Lo único que hay que cargar por libro. */
-interface StockEntry {
+export interface StockEntry {
   /** También es el slug: /catalogo/<id> y el nombre de la foto en /public/images/libros/<id>.png */
   id: string;
   title: string;
@@ -41,10 +64,34 @@ interface StockEntry {
   sinStock?: boolean;
   /** Ruta de una foto con otro nombre (opcional). */
   imagen?: string;
+  /** "Tapa blanda", "Tapa dura"… (opcional). Se muestra junto al título en el carrito y los pedidos. */
+  formato?: string;
+  /** Libros con el mismo `grupo` son ediciones del mismo título: una sola tarjeta y un selector en la página. */
+  grupo?: string;
   /** Colores manuales (opcional). Si no, se asignan solos. */
   colorDeTarjeta?: Tone;
   colorDePortada?: Tone;
   colorDeDetalle?: Tone;
+}
+
+/** Foto subida desde el panel: se sirve en /api/tapas/<id>-<v>.jpg (lib/catalog.ts). */
+export interface UploadedCover {
+  /** Cambia con cada foto nueva, así el navegador no muestra la vieja. */
+  v: number;
+  /** Ancho / alto. */
+  ratio: number;
+}
+
+/**
+ * Libro cargado o editado desde el panel (/admin/libros). Se guarda en la base de datos, no en este archivo.
+ * Si tiene el mismo id que uno de la lista de abajo, lo reemplaza (es una edición).
+ */
+export interface CustomBook extends StockEntry {
+  momentos?: MomentoId[];
+  razones?: [Razon, Razon, Razon, Razon];
+  tapa?: UploadedCover;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface Book extends StockEntry {
@@ -53,6 +100,14 @@ export interface Book extends StockEntry {
   colorDeTarjeta: Tone;
   colorDePortada: Tone;
   colorDeDetalle: Tone;
+  tapa?: UploadedCover;
+  /** codigo = solo en este archivo · editado = de este archivo, cambiado en el panel · panel = agregado en el panel. */
+  origen: 'codigo' | 'editado' | 'panel';
+  /**
+   * Solo en las listas de la tienda (oneCardPerTitle): formatos disponibles de este título, del más barato al más caro.
+   * Si hay más de uno, la tarjeta dice "Desde".
+   */
+  ediciones?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -228,6 +283,22 @@ const stock: StockEntry[] = [
     author: 'Paulo Coelho',
     category: 'espiritualidad',
     precioTransferencia: 15000,
+    formato: 'Tapa blanda',
+    grupo: 'el-alquimista',
+    sinopsis:
+      'Santiago, un joven pastor andaluz, cruza el desierto detrás de un sueño. Una fábula sobre animarse a seguir tu propio camino.',
+  },
+  {
+    // Misma obra, otra edición: se muestra como un solo libro con selector (ver `grupo`).
+    id: 'el-alquimista-tapa-dura',
+    title: 'El alquimista',
+    author: 'Paulo Coelho',
+    category: 'espiritualidad',
+    precioTransferencia: 17500,
+    formato: 'Tapa dura',
+    grupo: 'el-alquimista',
+    // Mismo diseño de tapa que la blanda: la diferencia se ve en el libro 3D (más grueso, cartón, lomo redondeado).
+    imagen: '/images/libros/el-alquimista.jpg',
     sinopsis:
       'Santiago, un joven pastor andaluz, cruza el desierto detrás de un sueño. Una fábula sobre animarse a seguir tu propio camino.',
   },
@@ -256,18 +327,24 @@ const stock: StockEntry[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Colores automáticos: cada género tiene su color de tarjeta, igual en todo el sitio.
-// (Ni crema ni naranja: se tienen que leer sobre las secciones crema y naranjas del catálogo,
-//  que alternan según qué géneros tengan stock.)
+// Colores automáticos: cada sección tiene su color de tarjeta (Category.tone), igual en todo el sitio.
 // ---------------------------------------------------------------------------
-export const CATEGORY_TONE: Record<CategoryId, Tone> = {
-  desarrollo: 'moss', // verde medio: crecer
-  finanzas: 'mustard', // dorado
-  romance: 'brick', // terracota
-  filosofia: 'beige', // papel
-  espiritualidad: 'forest', // verde bosque
-  thriller: 'ink', // casi negro
-};
+
+/** Colores que se pueden elegir para una sección (ni crema ni naranja: son los fondos del catálogo). */
+export const SECTION_TONES: { tone: Tone; label: string }[] = [
+  { tone: 'moss', label: 'Verde' },
+  { tone: 'forest', label: 'Verde bosque' },
+  { tone: 'leaf', label: 'Verde oliva' },
+  { tone: 'mustard', label: 'Mostaza' },
+  { tone: 'brick', label: 'Terracota' },
+  { tone: 'rust', label: 'Óxido' },
+  { tone: 'leather', label: 'Cuero' },
+  { tone: 'beige', label: 'Papel' },
+  { tone: 'ink', label: 'Negro' },
+];
+
+/** Color de tarjeta de una sección. */
+export const categoryTone = (id: CategoryId): Tone => categories.find((c) => c.id === id)?.tone ?? 'moss';
 
 /** Color de portada (solo para libros sin foto) según el color de la tarjeta; rota dentro del género. */
 const COVERS_BY_CARD: Partial<Record<Tone, Tone[]>> = {
@@ -277,6 +354,9 @@ const COVERS_BY_CARD: Partial<Record<Tone, Tone[]>> = {
   beige: ['rust', 'forest', 'leaf'],
   forest: ['orange', 'mustard', 'rust'],
   ink: ['rust', 'mustard', 'cream'],
+  rust: ['mustard', 'cream', 'forest'],
+  leaf: ['mustard', 'cream', 'rust'],
+  leather: ['mustard', 'cream', 'orange'],
 };
 
 const ACCENT_BY_COVER: Partial<Record<Tone, Tone>> = {
@@ -295,25 +375,93 @@ const ACCENT_BY_COVER: Partial<Record<Tone, Tone>> = {
 // (transfer * 10 / 9 en vez de / 0.9: evita que 18.000 dé 20.100 por un error de redondeo de la computadora).
 export const listPrice = (transfer: number) => Math.ceil((transfer * 10) / 9 / 100) * 100;
 
-// Todos los títulos del catálogo. Cuáles se muestran depende del stock (lib/stock.ts, panel /admin/stock).
-const indexInCategory = new Map<string, number>();
-for (const c of categories) {
-  stock.filter((b) => b.category === c.id).forEach((b, i) => indexInCategory.set(b.id, i));
+type Entry = StockEntry & { tapa?: UploadedCover; origen: Book['origen'] };
+
+function buildBooks(entries: Entry[]): Book[] {
+  const indexInCategory = new Map<string, number>();
+  for (const c of categories) {
+    entries.filter((b) => b.category === c.id).forEach((b, i) => indexInCategory.set(b.id, i));
+  }
+  return entries.map((entry) => {
+    const i = indexInCategory.get(entry.id) ?? 0;
+    const card = entry.colorDeTarjeta ?? categoryTone(entry.category);
+    const covers = COVERS_BY_CARD[card] ?? ['rust'];
+    const cover = entry.colorDePortada ?? covers[i % covers.length];
+    return {
+      ...entry,
+      // Todos los libros son tapa blanda salvo que se indique otra cosa.
+      formato: entry.formato || 'Tapa blanda',
+      price: listPrice(entry.precioTransferencia),
+      colorDeTarjeta: card,
+      colorDePortada: cover,
+      colorDeDetalle: entry.colorDeDetalle ?? ACCENT_BY_COVER[cover] ?? 'mustard',
+    };
+  });
 }
 
-export const books: Book[] = stock.map((entry) => {
-  const i = indexInCategory.get(entry.id) ?? 0;
-  const card = entry.colorDeTarjeta ?? CATEGORY_TONE[entry.category];
-  const covers = COVERS_BY_CARD[card] ?? ['rust'];
-  const cover = entry.colorDePortada ?? covers[i % covers.length];
-  return {
-    ...entry,
-    price: listPrice(entry.precioTransferencia),
-    colorDeTarjeta: card,
-    colorDePortada: cover,
-    colorDeDetalle: entry.colorDeDetalle ?? ACCENT_BY_COVER[cover] ?? 'mustard',
-  };
-});
+/** Ids de los libros de este archivo (los demás se agregaron desde el panel). */
+export const codeBookIds = new Set(stock.map((b) => b.id));
+
+/** Datos originales de un libro de este archivo (para "volver a los datos originales"). */
+export const codeBook = (id: string) => stock.find((b) => b.id === id);
+
+/**
+ * Todos los títulos del catálogo: los de este archivo + los cargados en el panel.
+ * Cuáles se muestran depende del stock (lib/stock.ts, panel /admin/stock).
+ * Es la misma lista siempre (se actualiza adentro), así getBook() sirve en el servidor y en el navegador.
+ */
+export const books: Book[] = buildBooks(stock.map((e) => ({ ...e, origen: 'codigo' })));
+
+/** Lo cargado en el panel: libros y secciones. */
+export interface CustomCatalog {
+  books: CustomBook[];
+  categories: CustomCategory[];
+}
+
+let appliedKey = '';
+
+/**
+ * Suma a las listas los libros y secciones cargados/editados en el panel. En el servidor lo llama lib/catalog.ts
+ * (después de leer la base); en el navegador, el carrito (con lo que le pasa el layout).
+ */
+export function applyCustomCatalog(custom: CustomCatalog) {
+  const key = JSON.stringify(custom);
+  if (key === appliedKey) return;
+  appliedKey = key;
+
+  // Secciones: base (o su versión editada) + las nuevas, ordenadas.
+  const catById = new Map(custom.categories.map((c) => [c.id, c]));
+  const merged = [
+    ...baseCategories.map((c) => {
+      const edit = catById.get(c.id);
+      return { cat: edit ? pickCategory(edit) : { ...c }, order: edit?.order ?? baseCategoryOrder(c.id), createdAt: 0 };
+    }),
+    ...custom.categories
+      .filter((c) => !codeCategoryIds.has(c.id))
+      .map((c) => ({ cat: pickCategory(c), order: c.order, createdAt: c.createdAt })),
+  ].sort((a, b) => a.order - b.order || a.createdAt - b.createdAt);
+  categories.splice(0, categories.length, ...merged.map((m) => m.cat));
+
+  // Libros.
+  const byId = new Map(custom.books.map((c) => [c.id, c]));
+  const fromCode: Entry[] = stock.map((e) => {
+    const edit = byId.get(e.id);
+    return edit ? { ...stripMeta(edit), origen: 'editado' } : { ...e, origen: 'codigo' };
+  });
+  const added: Entry[] = custom.books
+    .filter((c) => !codeBookIds.has(c.id))
+    .sort((a, b) => a.createdAt - b.createdAt)
+    .map((c) => ({ ...stripMeta(c), origen: 'panel' }));
+  books.splice(0, books.length, ...buildBooks([...fromCode, ...added]));
+  setCustomMomentos(Object.fromEntries(custom.books.filter((c) => c.momentos?.length).map((c) => [c.id, c.momentos!])));
+  setCustomRazones(Object.fromEntries(custom.books.filter((c) => c.razones?.length === 4).map((c) => [c.id, c.razones!])));
+}
+
+const pickCategory = ({ id, label, blurb, tone }: Category): Category => ({ id, label, blurb, tone });
+
+function stripMeta({ momentos: _m, razones: _r, createdAt: _c, updatedAt: _u, ...entry }: CustomBook) {
+  return entry;
+}
 
 // Las funciones de listado reciben la lista a usar: en las páginas, solo los libros con stock.
 /** Ya no se usa en el Inicio (ahí van los más vendidos del mes, lib/monthlyPicks.ts). */
@@ -323,7 +471,56 @@ export const booksInCategory = (category: CategoryId, list: Book[] = books) => l
 
 export const getBook = (id: string) => books.find((b) => b.id === id);
 
-export const getCategory = (id: CategoryId) => categories.find((c) => c.id === id)!;
+/** Sección de un libro. Si la borraron, una genérica (el libro igual se muestra). */
+export const getCategory = (id: CategoryId): Category =>
+  categories.find((c) => c.id === id) ?? { id, label: 'Libros', blurb: '', tone: 'moss' };
+
+// ---------------------------------------------------------------------------
+// Ediciones (tapa blanda / tapa dura…): cada una es un libro con su id, precio y stock,
+// unidas por `grupo`. En la tienda se ven como un solo título.
+// ---------------------------------------------------------------------------
+
+/**
+ * "Hábitos atómicos (tapa dura)": para carrito, checkout y pedidos.
+ * Solo si el título tiene varias ediciones o no es tapa blanda (la tapa blanda sola no hace falta aclararla).
+ */
+export const fullTitle = (book: Pick<Book, 'title' | 'formato' | 'grupo'>) =>
+  book.formato && (book.grupo || book.formato !== 'Tapa blanda') ? `${book.title} (${book.formato.toLowerCase()})` : book.title;
+
+/** Ediciones del mismo título dentro de `list` (incluye al libro), de la más barata a la más cara. */
+export function editionsOf(book: Book, list: Book[] = books): Book[] {
+  if (!book.grupo) return [book];
+  return list.filter((b) => b.grupo === book.grupo).sort((a, b) => a.precioTransferencia - b.precioTransferencia);
+}
+
+/**
+ * Una sola tarjeta por título: de cada grupo queda la edición más barata (con `ediciones` = formatos disponibles).
+ * Mantiene el orden de la lista (en el lugar de la primera edición que aparece).
+ */
+export function oneCardPerTitle(list: Book[]): Book[] {
+  const seen = new Set<string>();
+  const out: Book[] = [];
+  for (const b of list) {
+    if (!b.grupo) {
+      out.push(b);
+      continue;
+    }
+    if (seen.has(b.grupo)) continue;
+    seen.add(b.grupo);
+    const eds = editionsOf(b, list);
+    out.push(eds.length > 1 ? { ...eds[0], ediciones: eds.map((e) => e.formato ?? 'Otra edición') } : eds[0]);
+  }
+  return out;
+}
+
+/** Para detectar el mismo título cargado dos veces: sin tildes, mayúsculas ni signos. */
+export const normalizeTitle = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9ñ]+/g, ' ')
+    .trim();
 
 /** Primero los de la misma categoría, después el resto. */
 /** Géneros cercanos (de ida y vuelta): suman al relacionar libros. Los que no están, no se cruzan. */

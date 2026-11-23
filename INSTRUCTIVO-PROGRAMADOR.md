@@ -58,7 +58,7 @@ public/images/       fotos y tapas (libros/<id>.jpg)
 
 Reglas importantes:
 - **Los precios siempre se recalculan en el servidor** (`lib/pricing.ts`). El navegador solo manda ids y cantidades.
-- `data/books.ts`: cada libro tiene `precioTransferencia` (lo que se cobra por transferencia). El precio de lista (Mercado Pago) se calcula: +10 %, redondeado para arriba a $ 100.
+- `data/books.ts`: libros base (los nuevos se cargan desde `/admin/libros`, ver 3 bis). Cada libro tiene `precioTransferencia` (lo que se cobra por transferencia). El precio de lista (Mercado Pago) se calcula: +10 %, redondeado para arriba a $ 100.
 - Envíos: tabla por zona en `lib/shipping.ts` (cotizada a mano en MiCorreo). Córdoba Capital: retiro o Uber Moto, sin costo de envío.
 
 ## 3 bis. Cómo funciona: flujo de compra, estados y notificaciones
@@ -130,6 +130,27 @@ Cada cambio queda en `order.history` (fecha y nota) y se ve en la línea de tiem
 - **Inicio → "Elegidos / Los más vendidos de <mes>"** (`lib/monthlyPicks.ts`): un libro por género. Primero los más vendidos del mes; si faltan, el de más stock de cada género, con rotación mensual. Se titula "Los más vendidos" solo con 4 o más ejemplares vendidos en el mes. La página se regenera cada hora.
 - **"Seguí leyendo"** (`relatedBooks` en `data/books.ts`): por momentos en común ("Para tu momento", `data/momentos.ts`) y géneros cercanos. Nunca completa con libros que no tienen relación.
 - **Colores por género** de las tarjetas: `CATEGORY_TONE` en `data/books.ts`.
+
+### Libros cargados desde el panel (`/admin/libros`)
+La dueña puede **agregar libros nuevos** y **editar los existentes** (título, autor, categoría, precio con transferencia, sinopsis, "Para tu momento" y foto) sin tocar código.
+- **Catálogo final = `data/books.ts` + lo cargado en el panel.** Si un libro del panel tiene el mismo id que uno de `books.ts`, lo reemplaza (es una edición; en el panel figura como "Editado" y se puede volver a los datos originales). Los agregados figuran como "Agregado por vos" y se pueden borrar.
+- **Dónde se guarda** (`lib/catalog.ts`): Upstash hash `libros` (id → JSON) y la foto en la clave `tapa:<id>` (JPG en base64, ~150-300 KB: el navegador la achica a 1200 px antes de subirla). En local: `.data/libros.json` y `.data/tapas/`.
+- **Fotos**: se sirven en `/api/tapas/<id>-<versión>.jpg` con caché inmutable (la versión cambia con cada foto nueva) y pasan por `next/image` como cualquier otra. Una foto subida gana sobre la de `public/images/libros/`.
+- **Cómo llega a todo el sitio**: `books` en `data/books.ts` es una sola lista que se actualiza adentro (`applyCustomBooks`). En el servidor la actualiza `loadCatalog()` (lo llaman el layout, `getStockMap`, `/api/pedidos`, `/api/carritos`, etc.; como mucho una lectura cada 3 s por instancia). En el navegador la actualiza el `CartProvider` con la lista que le pasa el layout, así el carrito y el checkout conocen los libros nuevos. **Si agregás código que use `getBook()`/`books` en el servidor, llamá antes a `await loadCatalog()`.**
+- Al dar de alta un libro se pide el **stock inicial** (obligatorio, para que no quede "sin controlar"). Guardar refresca todo el sitio (`revalidatePath('/', 'layout')`).
+- Si Upstash falla, la tienda sigue con lo último que tenía cargado (o con los libros de `books.ts`).
+- El formulario también carga las **4 razones** (se guardan en el libro, `razones`; reemplazan a `data/razones.ts`) y muestra una **vista previa 3D** con la foto subida.
+
+### Secciones desde el panel (`/admin/secciones`)
+- Crear secciones nuevas (nombre, frase y color de tarjeta), editar las de fábrica, ordenarlas (↑ ↓) y borrar las creadas por ella (solo si no tienen libros).
+- Upstash hash `secciones` (id → JSON con `order`); en local `.data/secciones.json`. `categories` en `data/books.ts` se actualiza igual que `books` (`applyCustomCatalog`). `CategoryId` ahora es `string` y el color de cada sección es `Category.tone` (antes `CATEGORY_TONE`).
+- Una sección sin libros con stock no aparece en el catálogo.
+
+### Ediciones (tapa blanda / tapa dura)
+- Cada edición es **un libro aparte** (su id, precio y stock), unidas por el campo `grupo` y con `formato` ("Tapa blanda", "Tapa dura"… lista en `lib/formatos.ts`). Así el carrito, los pedidos y el stock no cambiaron.
+- **Detección**: al escribir el título en el formulario, si ya existe uno igual (sin tildes ni mayúsculas, `normalizeTitle`) ofrece "¿Es otra edición?". Al aceptar, completa autor, sección, sinopsis, momentos y razones, y pide el formato de cada una. Al guardar, la otra edición queda con el mismo `grupo`.
+- **Por defecto todos los libros son "Tapa blanda"** (`buildBooks`); solo El alquimista tiene además una tapa dura. Cada página de libro muestra un sello redondo con el formato (`components/libro/FormatSeal.tsx`), y la tapa dura se dibuja en 3D más gruesa (`Book3D hard`).
+- **Tienda**: una sola tarjeta por título (`oneCardPerTitle`: la edición más barata con stock, "Desde $ X" y "Tapa blanda y tapa dura"); en la página del libro, selector de ediciones (links a la página de cada una). En carrito, checkout, pedidos y mails el título lleva el formato: "Hábitos atómicos (tapa dura)" (`fullTitle`).
 
 ## 4. Variables de entorno
 
@@ -246,6 +267,9 @@ Si algo no anda, `/admin/servicio-web` muestra el diagnóstico (faltan variables
 - [ ] Cron corriendo cada hora (ver respuesta `{"ok":true,…}`).
 - [ ] Botón de arrepentimiento y link "Defensa de las y los Consumidores" en el footer.
 - [ ] `/admin` con una clave larga.
+- [ ] `/admin/libros`: agregar un libro de prueba con foto desde el celular, verlo en la tienda y borrarlo.
+- [ ] `/admin/secciones`: crear una sección de prueba, ponerle un libro, verla en el catálogo y borrarla.
+- [ ] Cargar una tapa dura de un título existente: tiene que aparecer el aviso "¿Es otra edición?" y el selector en la página.
 
 ## 9. Stock al 22/11/2026 (para cargar en `/admin/stock`)
 
@@ -268,11 +292,12 @@ Si algo no anda, `/admin/servicio-web` muestra el diagnóstico (faltan variables
 | los-cuatro-acuerdos | 3 |
 | el-poder-del-ahora | 1 |
 | el-alquimista | 2 |
+| el-alquimista-tapa-dura | 1 |
 | el-hombre-en-busca-de-sentido | 3 |
 | la-paciente-silenciosa | 2 |
 
 `la-montana-eres-tu` está marcado sin stock en `data/books.ts` (`sinStock: true`). Por consola de Upstash se puede cargar todo junto:
 
 ```
-HSET stock habitos-atomicos 1 la-inteligencia-emocional 1 el-ego-es-el-enemigo 1 el-poder-de-las-palabras 1 como-ganar-amigos 1 padre-rico-padre-pobre 5 la-psicologia-del-dinero 2 el-inversor-inteligente 0 de-cero-a-uno 1 el-millonario-de-la-puerta-de-al-lado 1 el-hombre-mas-rico-de-babilonia 1 el-dia-que-dejo-de-nevar-en-alaska 1 50-proverbios-estoicos 1 el-camino-del-hombre-superior 1 los-cuatro-acuerdos 3 el-poder-del-ahora 1 el-alquimista 2 el-hombre-en-busca-de-sentido 3 la-paciente-silenciosa 2
+HSET stock habitos-atomicos 1 la-inteligencia-emocional 1 el-ego-es-el-enemigo 1 el-poder-de-las-palabras 1 como-ganar-amigos 1 padre-rico-padre-pobre 5 la-psicologia-del-dinero 2 el-inversor-inteligente 0 de-cero-a-uno 1 el-millonario-de-la-puerta-de-al-lado 1 el-hombre-mas-rico-de-babilonia 1 el-dia-que-dejo-de-nevar-en-alaska 1 50-proverbios-estoicos 1 el-camino-del-hombre-superior 1 los-cuatro-acuerdos 3 el-poder-del-ahora 1 el-alquimista 2 el-alquimista-tapa-dura 1 el-hombre-en-busca-de-sentido 3 la-paciente-silenciosa 2
 ```

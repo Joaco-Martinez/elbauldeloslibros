@@ -6,6 +6,7 @@ import { BookImage } from '@/components/ui/BookImage';
 import { Button } from '@/components/ui/Button';
 import { WaveDivider } from '@/components/ui/WaveDivider';
 import { getBook } from '@/data/books';
+import { loadCatalog } from '@/lib/catalog';
 import { orderStore } from '@/lib/orderStore';
 import { feedbackStore } from '@/lib/reviews';
 import { safeEqual } from '@/lib/tokenCompare';
@@ -30,6 +31,7 @@ export default async function OpinionPage({ params, searchParams }: Props) {
   const delivered = order.status === 'entregado';
   const name = order.customer.nombre.split(' ')[0];
 
+  await loadCatalog();
   const books = order.lines.flatMap((l) => {
     const book = getBook(l.id);
     return book

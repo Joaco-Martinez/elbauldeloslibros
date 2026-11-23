@@ -1,6 +1,7 @@
 import { revalidatePath } from 'next/cache';
 import { NextResponse } from 'next/server';
 import { forgetCartsOf } from '@/lib/abandonedCarts';
+import { loadCatalog } from '@/lib/catalog';
 import { maybeExpireUnpaidOrders } from '@/lib/expireOrders';
 import { createCheckout } from '@/lib/mercadopago';
 import { notifyNewOrder } from '@/lib/notify';
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Pedido inválido.' }, { status: 400 });
   }
 
+  await loadCatalog(); // libros cargados en el panel (precios al día)
   const parsed = parseOrderRequest(body);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
