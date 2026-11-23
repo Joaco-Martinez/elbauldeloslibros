@@ -508,6 +508,13 @@
   .buy-bar[data-visible='true'] {
     transform: none;
   }
+  /* El botón de WhatsApp sube cuando aparece la barra de compra, para no taparla. */
+  .wa-float {
+    transition: bottom 280ms var(--ease-out), transform 150ms ease;
+  }
+  body:has(.buy-bar[data-visible='true']) .wa-float {
+    bottom: 5.5rem;
+  }
 
   /* Pegatinas */
   .sticker {
