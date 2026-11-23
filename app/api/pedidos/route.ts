@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   if (!reservation.ok) return NextResponse.json({ error: reservation.error }, { status: 409 });
   order.stockReserved = reservation.reserved;
 
-  const origin = process.env.SITE_URL?.replace(/\/$/, '') || new URL(request.url).origin;
+  const origin = process.env.SITE_URL?.trim().replace(/\/$/, '') || new URL(request.url).origin;
 
   // Mercado Pago: si no se puede iniciar el pago, se devuelve el stock.
   let redirectUrl: string | undefined;

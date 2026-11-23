@@ -11,7 +11,8 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'Catálogo', href: '/catalogo' },
   { label: 'Recomendados', href: '/#recomendados' },
   { label: 'Nosotros', href: '/nosotros' },
-  { label: 'Contacto', href: whatsappUrl(), external: true },
+  // Dice WhatsApp (no 'Contacto'): así se sabe que abre la app y sale de la web.
+  { label: 'WhatsApp', href: whatsappUrl(), external: true },
 ];
 
 /** Props para abrir un link externo de forma segura. */

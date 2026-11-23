@@ -236,6 +236,8 @@ export function CheckoutForm() {
   const mode = shippingModeOf(delivery);
   const shippingTotal = mode ? (shippingPrices[mode] ?? 0) : 0;
   const totals = computeTotals(items, method, shippingTotal);
+  // Retiro / Uber: no hay envío que sumar. Correo: hace falta la provincia para saber cuánto sale.
+  const totalKnown = !mode || shippingPrices[mode] != null;
   const shippingLine = isCapital
     ? DELIVERY_SUMMARY[delivery]
     : shippingPrices[shipMode] !== null
@@ -579,6 +581,8 @@ export function CheckoutForm() {
 
           <Button type="submit" variant="gold" className="mt-6 h-14 w-full text-[16px]" disabled={submitting}>
             {submitting ? 'Procesando…' : method === 'mercadopago' ? 'Pagar con Mercado Pago' : 'Confirmar pedido'}
+            {/* Con el monto, solo cuando ya se sabe el envío (si no, el número no sería el final). */}
+            {!submitting && totalKnown && ` · ${formatPrice(totals.total)}`}
           </Button>
           <p className="mt-3 text-center text-[12px] font-medium">
             {method === 'mercadopago'

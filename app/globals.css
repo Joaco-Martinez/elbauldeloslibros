@@ -539,6 +539,11 @@
   .marquee-track {
     animation: marquee 30s linear infinite;
   }
+  /* Se frena al pasar el mouse o al recorrerla con el teclado, para poder tocar un género. */
+  .marquee-track:hover,
+  .marquee-track:focus-within {
+    animation-play-state: paused;
+  }
 
   .spin-slow {
     animation: spin 40s linear infinite;

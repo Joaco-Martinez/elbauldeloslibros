@@ -8,7 +8,7 @@ import { LEGAL, SOCIAL_LINKS, WHATSAPP_NUMBER, WITHDRAWAL_DAYS } from '@/lib/sit
  * URL pública para Google (canónicas, sitemap, datos estructurados).
  * Sale de SITE_URL; si falta, el dominio de la tienda.
  */
-export const SITE_URL = (process.env.SITE_URL || 'https://www.elbauldeloslibros.com.ar').replace(/\/$/, '');
+export const SITE_URL = (process.env.SITE_URL?.trim() || 'https://www.elbauldeloslibros.com.ar').replace(/\/$/, '');
 export const SITE_NAME = 'El Baul de los Libros';
 export const SITE_DESCRIPTION =
   'Librería online de libros nuevos con envío a domicilio a toda la Argentina. Desarrollo personal, finanzas, filosofía, espiritualidad, romance y thriller, elegidos uno por uno.';
