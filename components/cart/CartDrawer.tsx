@@ -15,7 +15,7 @@ import { useDialog } from '@/lib/useDialog';
 import { MAX_QTY, useCart } from './CartProvider';
 
 export function CartDrawer() {
-  const { isOpen, close, items, count, total, changeQty, remove, images } = useCart();
+  const { isOpen, close, items, count, total, changeQty, remove, images, maxFor } = useCart();
   const transferTotal = items.reduce((sum, i) => sum + (getBook(i.id)?.precioTransferencia ?? 0) * i.qty, 0);
   const savings = total - transferTotal;
   const panelRef = useRef<HTMLDivElement>(null);
@@ -114,7 +114,7 @@ export function CartDrawer() {
                           <button
                             type="button"
                             onClick={() => changeQty(id, 1)}
-                            disabled={qty >= MAX_QTY}
+                            disabled={qty >= maxFor(id)}
                             aria-label={`Agregar un ejemplar de ${book.title}`}
                             className="focus-ring grid h-full w-8 place-items-center rounded-full text-[16px] font-bold disabled:opacity-40"
                           >
@@ -123,6 +123,12 @@ export function CartDrawer() {
                         </div>
                         <p className="text-[14px] font-bold">{formatPrice(book.price * qty)}</p>
                       </div>
+                      {/* Llegó al stock (no al tope general de MAX_QTY): se avisa por qué no deja sumar. */}
+                      {qty >= maxFor(id) && maxFor(id) < MAX_QTY && (
+                        <p className="mt-1.5 text-[12px] font-bold text-brick" role="status">
+                          {maxFor(id) === 1 ? 'Es el último ejemplar.' : `Son los últimos ${maxFor(id)} ejemplares.`}
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={() => remove(id)}

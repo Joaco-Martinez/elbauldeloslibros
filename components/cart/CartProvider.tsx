@@ -31,11 +31,28 @@ interface CartContextValue {
   close: () => void;
   /** Fotos de los libros (resueltas en el servidor), por id. */
   images: Record<string, BookCoverImage | null>;
+  /** Cuántos ejemplares de un libro se pueden tener en el carrito (el stock, como mucho MAX_QTY). */
+  maxFor: (id: string) => number;
+  /** Cuántos ejemplares de un libro hay en el carrito. */
+  qtyOf: (id: string) => number;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const clampQty = (qty: number) => Math.max(1, Math.min(MAX_QTY, Math.round(qty)));
+/** Stock por libro que manda el servidor (null = sin controlar). Lo actualiza el CartProvider. */
+let stockLimits: Record<string, number | null> = {};
+
+/** Tope por libro: el stock disponible (si está cargado), y nunca más de MAX_QTY. 0 = agotado. */
+const maxFor = (id: string) => {
+  const units = stockLimits[id];
+  return typeof units === 'number' ? Math.max(0, Math.min(MAX_QTY, units)) : MAX_QTY;
+};
+
+const clampQty = (id: string, qty: number) => Math.max(1, Math.min(maxFor(id), Math.round(qty)));
+
+/** Ajusta el carrito al stock: baja las cantidades de más y saca los libros agotados. */
+const fitToStock = (list: CartItem[]) =>
+  list.filter((i) => maxFor(i.id) > 0).map((i) => (i.qty > maxFor(i.id) ? { ...i, qty: maxFor(i.id) } : i));
 
 function readStorage(): CartItem[] {
   try {
@@ -45,7 +62,7 @@ function readStorage(): CartItem[] {
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((i): i is CartItem => typeof i?.id === 'string' && typeof i?.qty === 'number' && !!getBook(i.id))
-      .map((i) => ({ id: i.id, qty: clampQty(i.qty) }));
+      .map((i) => ({ id: i.id, qty: clampQty(i.id, i.qty) }));
   } catch {
     return [];
   }
@@ -65,7 +82,7 @@ function readCartLink(): CartItem[] | null {
       .flatMap((part) => {
         const [id, qty] = part.split(':');
         const n = Number(qty);
-        return getBook(id) && Number.isFinite(n) && n >= 1 ? [{ id, qty: clampQty(n) }] : [];
+        return getBook(id) && Number.isFinite(n) && n >= 1 ? [{ id, qty: clampQty(id, n) }] : [];
       });
     return items.length > 0 ? items : null;
   } catch {
@@ -77,13 +94,17 @@ export function CartProvider({
   children,
   images,
   customCatalog,
+  stock,
 }: {
   children: ReactNode;
   images: Record<string, BookCoverImage | null>;
   /** Libros y secciones cargados en el panel: se suman al catálogo del navegador antes de que se dibuje el carrito. */
   customCatalog: CustomCatalog;
+  /** Unidades por libro (null = sin controlar): el carrito no deja pasar del stock. */
+  stock: Record<string, number | null>;
 }) {
   applyCustomCatalog(customCatalog);
+  stockLimits = stock;
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -93,9 +114,17 @@ export function CartProvider({
   // Si llega con un link de "te guardamos el carrito" (?c=libro:2,otro:1), ese carrito reemplaza al guardado.
   useEffect(() => {
     const fromLink = readCartLink();
-    setItems(fromLink ?? readStorage());
+    setItems(fitToStock(fromLink ?? readStorage()));
     setHydrated(true);
   }, []);
+
+  // Si el stock cambió mientras navega (ej. alguien compró el último), el carrito se acomoda.
+  useEffect(() => {
+    setItems((prev) => {
+      const next = fitToStock(prev);
+      return next.length === prev.length && next.every((i, k) => i.qty === prev[k].qty) ? prev : next;
+    });
+  }, [stock]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -107,17 +136,17 @@ export function CartProvider({
   }, [items, hydrated]);
 
   const add = useCallback((id: string, qty = 1) => {
-    if (!getBook(id)) return;
+    if (!getBook(id) || maxFor(id) === 0) return;
     setItems((prev) => {
       const found = prev.find((i) => i.id === id);
-      if (found) return prev.map((i) => (i.id === id ? { ...i, qty: clampQty(i.qty + qty) } : i));
-      return [...prev, { id, qty: clampQty(qty) }];
+      if (found) return prev.map((i) => (i.id === id ? { ...i, qty: clampQty(id, i.qty + qty) } : i));
+      return [...prev, { id, qty: clampQty(id, qty) }];
     });
   }, []);
 
   /** Suma o resta sobre la cantidad actual (seguro ante clics rápidos). */
   const changeQty = useCallback((id: string, delta: number) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: clampQty(i.qty + delta) } : i)));
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, qty: clampQty(id, i.qty + delta) } : i)));
   }, []);
 
   const remove = useCallback((id: string) => setItems((prev) => prev.filter((i) => i.id !== id)), []);
@@ -136,8 +165,11 @@ export function CartProvider({
   const value = useMemo<CartContextValue>(() => {
     const count = items.reduce((n, i) => n + i.qty, 0);
     const total = items.reduce((sum, i) => sum + (getBook(i.id)?.price ?? 0) * i.qty, 0);
-    return { items, ready: hydrated, count, total, add, changeQty, remove, clear, isOpen, open, close, images };
-  }, [items, hydrated, add, changeQty, remove, clear, isOpen, open, close, images]);
+    const qtyOf = (id: string) => items.find((i) => i.id === id)?.qty ?? 0;
+    return { items, ready: hydrated, count, total, add, changeQty, remove, clear, isOpen, open, close, images, maxFor, qtyOf };
+    // `stock` cambia el tope de cada libro: se recalcula para que los botones se actualicen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, hydrated, add, changeQty, remove, clear, isOpen, open, close, images, stock]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

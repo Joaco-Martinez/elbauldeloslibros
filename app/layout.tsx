@@ -8,6 +8,7 @@ import { CartDrawer } from '@/components/cart/CartDrawer';
 import { books } from '@/data/books';
 import { getBookCover } from '@/lib/bookImage';
 import { loadCatalog, loadedCustomCatalog } from '@/lib/catalog';
+import { getStockMap } from '@/lib/stock';
 import { DEFAULT_SHARE_IMAGE, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import './globals.css';
 
@@ -61,6 +62,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Libros cargados en el panel: se suman al catálogo, y se le pasan al navegador para el carrito.
   await loadCatalog();
   const customCatalog = loadedCustomCatalog();
+  // Stock por libro: el carrito no deja agregar más ejemplares de los que hay.
+  const stock = await getStockMap();
   // Fotos resueltas en el servidor para que el carrito (cliente) las pueda mostrar.
   const bookImages = Object.fromEntries(books.map((b) => [b.id, getBookCover(b)]));
 
@@ -74,7 +77,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Saltar al contenido
         </a>
-        <CartProvider images={bookImages} customCatalog={customCatalog}>
+        <CartProvider images={bookImages} customCatalog={customCatalog} stock={stock}>
           <Header />
           <main id="contenido">{children}</main>
           <Footer />
