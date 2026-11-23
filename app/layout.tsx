@@ -4,6 +4,7 @@ import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { WhatsAppButton } from '@/components/layout/WhatsAppButton';
 import { SvgDefs } from '@/components/ui/SvgDefs';
+import { Analytics } from '@/components/analytics/Analytics';
 import { CartProvider } from '@/components/cart/CartProvider';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { books } from '@/data/books';
@@ -72,6 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="es-AR" className={`${display.variable} ${body.variable} ${script.variable}`}>
       <body>
         <SvgDefs />
+        <Analytics />
         <a
           href="#contenido"
           className="btn sr-only z-50 bg-cream px-4 py-2 text-[13px] text-brick focus:not-sr-only focus:absolute focus:left-4 focus:top-4"

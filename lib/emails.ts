@@ -88,7 +88,7 @@ function summaryHtml(order: Order) {
   </p>`;
 }
 
-function transferBoxHtml(order: Order) {
+function transferBoxHtml(order: Order, track: string) {
   const data = transferInfoComplete()
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:10px">
         ${transferRows()
@@ -103,9 +103,12 @@ function transferBoxHtml(order: Order) {
     <div style="font-family:${FONT};font-size:15px;font-weight:700;color:${C.ink}">Transferí ${formatPrice(order.total)}</div>
     ${data}
     <p style="margin:14px 0 14px;font-family:${FONT};font-size:13px;color:${C.ink};line-height:1.5">
-      Después mandanos el comprobante por WhatsApp al ${esc(WHATSAPP_DISPLAY)} con el número de pedido <strong>${esc(order.id)}</strong>. Sin el comprobante no podemos confirmar el pedido.
+      Después subí el comprobante (foto, captura o PDF) desde el seguimiento de tu pedido <strong>${esc(order.id)}</strong>. Sin el comprobante no podemos confirmar el pedido.
     </p>
-    ${button(receiptWhatsappUrl(order.id, order.total), 'Enviar comprobante por WhatsApp')}
+    ${button(track, 'Subir el comprobante')}
+    <p style="margin:12px 0 0;font-family:${FONT};font-size:12px;color:${C.ink}">
+      ¿Preferís WhatsApp? <a href="${esc(receiptWhatsappUrl(order.id, order.total))}" style="color:${C.ink};font-weight:700">Mandalo al ${esc(WHATSAPP_DISPLAY)}</a>.
+    </p>
   </div>`;
 }
 
@@ -140,7 +143,7 @@ export function customerStatusEmail(order: Order, origin: string, note?: string)
           <p style="margin:12px 0 0;font-family:${FONT};font-size:15px;line-height:1.5;color:${C.ink}">Hola ${esc(order.customer.nombre.split(' ')[0])}, ${esc(stepDetail(order.status, order).replace(/^./, (c) => c.toLowerCase()))}</p>
           ${note ? `<p style="margin:12px 0 0;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.ink};background:${C.beige};border-radius:12px;padding:12px 14px">${esc(note)}</p>` : ''}
           ${eta ? `<div style="margin-top:18px;background:${C.mustard};border-radius:14px;padding:14px 18px;font-family:${FONT};font-size:16px;font-weight:700;color:${C.forest}">${esc(eta.label)}</div>` : ''}
-          ${needsReceipt ? transferBoxHtml(order) : ''}
+          ${needsReceipt ? transferBoxHtml(order, track) : ''}
           ${restore ? `<div style="margin-top:20px">${button(restore, 'Volver a armar mi pedido')}</div>` : ''}
           ${
             // Cancelado: la explicación ya está arriba, no se repite la línea de tiempo.
@@ -174,7 +177,8 @@ export function customerStatusEmail(order: Order, origin: string, note?: string)
       ? [
           '',
           `Transferí ${formatPrice(order.total)}${transferInfoComplete() ? `. ${transferRows().map(([k, v]) => `${k}: ${v}`).join(' · ')}` : ''}.`,
-          `Mandá el comprobante por WhatsApp con el número de pedido: ${receiptWhatsappUrl(order.id, order.total)}`,
+          `Subí el comprobante acá: ${track}`,
+          `O mandalo por WhatsApp: ${receiptWhatsappUrl(order.id, order.total)}`,
         ]
       : []),
     ...(order.status === 'cancelado' ? [] : ['', timelineText]),
@@ -194,7 +198,7 @@ export function customerStatusEmail(order: Order, origin: string, note?: string)
 export function shopNewOrderEmail(order: Order, origin: string) {
   const c = order.customer;
   const text = [
-    `Pedido ${order.id} · ${order.method === 'transferencia' ? 'Transferencia (10% off) — esperar comprobante por WhatsApp' : 'Mercado Pago'}`,
+    `Pedido ${order.id} · ${order.method === 'transferencia' ? 'Transferencia (10% off) — el comprobante llega por la web (panel) o por WhatsApp' : 'Mercado Pago'}`,
     `Entrega: ${DELIVERY_LABEL[order.delivery ?? 'envio']}${isLocalDelivery(order.delivery ?? 'envio') ? ' (Córdoba Capital, coordinar por WhatsApp)' : ' (Correo Argentino)'}`,
     '',
     ...order.lines.map((l) => `• ${l.qty} × ${l.title} — ${formatPrice(l.subtotal)}`),

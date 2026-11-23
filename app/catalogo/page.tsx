@@ -14,8 +14,11 @@ export const metadata: Metadata = {
   ...pageSeo('/catalogo'),
 };
 
+/** Tarjetas por género en el catálogo completo; el resto, en la página del género ("Ver los N →"). */
+const PER_SECTION = 4;
+
 export default async function CatalogoPage() {
-  // Solo libros y categorías con stock; fondos alternados crema / naranja unidos por ondas.
+  // Solo libros y géneros con stock; cada sección con el color de su género, unidas por ondas.
   const available = await getAvailableBooks();
   // Tapa blanda y tapa dura del mismo título: una sola tarjeta ("Desde $ X").
   const sections = categories
@@ -24,18 +27,17 @@ export default async function CatalogoPage() {
 
   return (
     <>
-      <CatalogHero categories={sections.map((s) => s.category)} />
+      <CatalogHero categories={sections.map((s) => s.category)} next={sections[0]?.category.tone ?? 'cream'} />
       {/* h2 oculto para mantener la jerarquía h1 → h2 → h3 */}
-      <h2 className="sr-only">Categorías</h2>
+      <h2 className="sr-only">Géneros</h2>
       {sections.map(({ category, books }, i) => {
-        const bg = i % 2 === 0 ? 'cream' : 'orange';
-        const next = i === sections.length - 1 ? 'forest' : i % 2 === 0 ? 'orange' : 'cream';
+        const next = sections[i + 1]?.category.tone ?? 'forest';
         return (
           <Fragment key={category.id}>
             {/* Sin "¡Quedan X!" en el catálogo completo: con casi todo en 1 ejemplar, aparecería en todas las tarjetas
                 y deja de llamar la atención. Se muestra en el Inicio, en "Seguí leyendo" y en la página de cada libro. */}
-            <CategorySection category={category} books={books} background={bg} />
-            <WaveDivider top={bg} bottom={next} variant={(i % 3) as 0 | 1 | 2} flip={i % 2 === 1} />
+            <CategorySection category={category} books={books} limit={PER_SECTION} />
+            <WaveDivider top={category.tone} bottom={next} variant={(i % 3) as 0 | 1 | 2} flip={i % 2 === 1} />
           </Fragment>
         );
       })}

@@ -71,6 +71,8 @@ export interface Order {
   expiredAt?: string;
   /** Mercado Pago acreditó el pago después de vencer y ya no había stock: hay que devolverlo o conseguir el libro. */
   paidAfterExpiry?: boolean;
+  /** Cuándo el cliente subió el comprobante de transferencia desde la web (ISO). Ver lib/receipts.ts. */
+  receiptAt?: string;
   /** Unidades que este pedido descontó del stock (se devuelven si se cancela). */
   stockReserved?: { id: string; qty: number }[];
 }

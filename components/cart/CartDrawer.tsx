@@ -9,7 +9,7 @@ import { BookCover } from '@/components/ui/BookCover';
 import { Button } from '@/components/ui/Button';
 import { Sticker } from '@/components/ui/Sticker';
 import { formatPrice } from '@/lib/formatPrice';
-import { SHIPPING_FROM } from '@/lib/shipping';
+import { ShippingEstimate } from './ShippingEstimate';
 import { bgTone } from '@/lib/tokens';
 import { useDialog } from '@/lib/useDialog';
 import { MAX_QTY, useCart } from './CartProvider';
@@ -163,9 +163,8 @@ export function CartDrawer() {
                 <span>Con Mercado Pago</span>
                 <span className="font-bold">{formatPrice(total)}</span>
               </div>
-              <p className="mt-2 px-1 text-[12px] font-medium">
-                Más el envío por Correo Argentino (desde {formatPrice(SHIPPING_FROM)}). En Córdoba Capital, retiro o Uber Moto.
-              </p>
+              {/* El envío se ve antes del checkout: elegís la provincia y aparece el costo. */}
+              <ShippingEstimate bookCount={count} transferTotal={transferTotal} />
               <Button href="/checkout" variant="gold" className="mt-4 h-14 w-full text-[16px]" onClick={close}>
                 Finalizar compra
               </Button>

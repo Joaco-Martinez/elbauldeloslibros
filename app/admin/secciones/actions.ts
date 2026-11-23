@@ -41,7 +41,7 @@ export async function saveSection(_prev: SectionFormState, form: FormData): Prom
     cat = { id: editingId, label, blurb, tone: toneOk.tone, order: prev?.order ?? orderAt(index), createdAt: prev?.createdAt ?? now };
   } else {
     let id = slugify(label) || 'seccion';
-    for (let n = 2; categories.some((c) => c.id === id) || RESERVED.has(id); n++) id = `${slugify(label)}-${n}`;
+    for (let n = 2; categories.some((c) => c.id === id) || books.some((b) => b.id === id) || RESERVED.has(id); n++) id = `${slugify(label)}-${n}`;
     const maxOrder = Math.max(0, ...categories.map((_, i) => orderAt(i)));
     cat = { id, label, blurb, tone: toneOk.tone, order: maxOrder + 10, createdAt: now };
   }

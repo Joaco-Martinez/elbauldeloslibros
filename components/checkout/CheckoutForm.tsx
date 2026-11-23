@@ -17,6 +17,8 @@ import {
 import { formatPrice } from '@/lib/formatPrice';
 import { bookCount, computeTotals, TRANSFER_DISCOUNT, type PaymentMethod } from '@/lib/pricing';
 import { SHIPPING_ETA, shippingCost, shippingZone, type ShippingMode } from '@/lib/shipping';
+import { analyticsItems, track } from '@/lib/analytics';
+import { readSavedProvince, saveProvince } from '@/lib/savedProvince';
 import { PROVINCIAS } from '@/lib/site';
 import { TransferConfirmation, type TransferResult } from './TransferConfirmation';
 
@@ -203,6 +205,24 @@ export function CheckoutForm() {
   const [transfer, setTransfer] = useState<TransferResult | null>(null);
   // Dirección controlada para detectar Córdoba Capital y ofrecer retiro / Uber Moto.
   const [provincia, setProvincia] = useState('');
+  // Si eligió la provincia en el carrito para ver el envío, viene completa.
+  useEffect(() => {
+    const saved = readSavedProvince();
+    if (saved) setProvincia((p) => p || saved);
+  }, []);
+  // Medición: entró al checkout (una vez, cuando ya se leyó el carrito).
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (!ready || items.length === 0 || checkoutTracked.current) return;
+    checkoutTracked.current = true;
+    track('begin_checkout', { items: analyticsItems(items) });
+  }, [ready, items]);
+  // Medición: eligió provincia (ya sabe cuánto sale el envío).
+  useEffect(() => {
+    if (provincia && items.length > 0) track('add_shipping_info', { items: analyticsItems(items), shipping_tier: provincia });
+    // Solo cuando cambia la provincia.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provincia]);
   const [ciudad, setCiudad] = useState('');
   const [cp, setCp] = useState('');
   // En Córdoba Capital solo hay retiro o Uber Moto; en el resto, Correo Argentino a sucursal o domicilio.
@@ -271,6 +291,10 @@ export function CheckoutForm() {
       // El pedido ya existe: el servidor borró el carrito guardado y el próximo checkout arranca de cero.
       forgetDraftId();
       lastDraft.current = '';
+      // Medición: pedido confirmado (con transferencia todavía falta el comprobante; con Mercado Pago, el pago).
+      const tracked = analyticsItems(items);
+      track('add_payment_info', { items: tracked, payment_type: method });
+      track('purchase', { items: tracked, value: data.total, transaction_id: data.orderId, shipping: shippingTotal });
       if (method === 'mercadopago') {
         // El carrito se vacía cuando Mercado Pago confirma el pago (página de resultado).
         window.location.assign(data.redirectUrl);
@@ -387,7 +411,10 @@ export function CheckoutForm() {
               name="provincia"
               required
               value={provincia}
-              onChange={(e) => setProvincia(e.target.value)}
+              onChange={(e) => {
+                setProvincia(e.target.value);
+                saveProvince(e.target.value);
+              }}
               autoComplete="address-level1"
               className={inputClass}
             >

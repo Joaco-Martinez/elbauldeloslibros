@@ -13,6 +13,7 @@ import { Book3D } from '@/components/ui/Book3D';
 import { bookRatio } from '@/lib/bookImage';
 import { getMomentos } from '@/data/momentos';
 import { computeTotals } from '@/lib/pricing';
+import { TrackViewItem } from '@/components/analytics/TrackViewItem';
 import { BuyBar } from './BuyBar';
 import { FormatSeal } from './FormatSeal';
 import { ShareBook } from './ShareBook';
@@ -49,7 +50,7 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
           <nav aria-label="Estás en" className="text-[13px] font-medium">
             {/* Celular: solo volver a la categoría. Desde tablet: ruta completa. */}
             <Link
-              href={`/catalogo#${category.id}`}
+              href={`/catalogo/${category.id}`}
               className="focus-ring inline-flex items-center gap-1.5 rounded-sm font-bold underline-offset-4 hover:underline md:hidden"
               style={{ '--ring': 'var(--color-cream)' } as CSSProperties}
             >
@@ -63,7 +64,7 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
               </li>
               <li aria-hidden="true">/</li>
               <li>
-                <Link href={`/catalogo#${category.id}`} className="focus-ring rounded-sm underline-offset-4 hover:underline">
+                <Link href={`/catalogo/${category.id}`} className="focus-ring rounded-sm underline-offset-4 hover:underline">
                   {category.label}
                 </Link>
               </li>
@@ -220,6 +221,7 @@ export function BookHero({ book, category, next = 'orange', units = null, rating
           </div>
         </div>
       </section>
+      <TrackViewItem item={{ id: book.id, name: fullTitle(book), price: book.price, category: category.label }} />
       <BuyBar
         bookId={book.id}
         title={fullTitle(book)}

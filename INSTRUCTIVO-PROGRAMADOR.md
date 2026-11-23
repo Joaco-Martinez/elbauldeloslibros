@@ -255,6 +255,15 @@ Variables (se copian desde cobranza → Proyectos → botón "Sitio"). Como son 
 
 Si algo no anda, `/admin/servicio-web` muestra el diagnóstico (faltan variables, token inválido, URL mal, cobranza caída).
 
+## 6 ter. Comprobantes, géneros, buscador, envío en el carrito y medición
+
+- **Comprobante de transferencia por la web**: el cliente lo sube (foto o PDF, hasta 4 MB; las fotos se achican en el navegador) desde la confirmación del pedido o desde el seguimiento. `POST /api/pedidos/[id]/comprobante` (valida la clave del pedido). Se guarda en Upstash `comprobante:<pedido>` (vence a los 120 días; local: `.data/comprobantes/`), marca `order.receiptAt`, suma un movimiento y manda un mail al negocio con el archivo adjunto (`notifyReceipt`). En el panel: "Ver comprobante" (`/api/admin/comprobante/[id]`, solo con sesión) y la etiqueta "Comprobante ✓" en la lista. WhatsApp queda como alternativa.
+- **Páginas por género**: `/catalogo/<género>` (mismo segmento que los libros: si el id es de una sección, se muestra el género). Orden por `?orden=menor-precio | mayor-precio | a-z`. Están en el sitemap. Un libro y una sección no pueden tener el mismo id (lo controla el panel).
+- **Catálogo**: cada sección con el color de su género (Panel → Secciones) y como mucho 4 libros + "Ver los N →". Tarjetas claras con una franja del color del género.
+- **Buscador**: lupa en el menú (`components/layout/SearchDialog.tsx`). Busca en el navegador por título, autor, género y "Para tu momento"; solo libros con stock.
+- **Envío en el carrito**: el cliente elige la provincia en el carrito y ve sucursal / domicilio / total (misma tabla de `lib/shipping.ts`). Se guarda en el navegador (`bdl-provincia`) y el checkout la completa sola.
+- **Medición**: Google Analytics 4 y Meta Pixel se cargan solo con `NEXT_PUBLIC_GA_ID` / `NEXT_PUBLIC_META_PIXEL_ID` (ver `.env.example`; requieren Redeploy). Eventos: `view_item`, `add_to_cart`, `begin_checkout`, `add_shipping_info`, `add_payment_info`, `purchase` (`lib/analytics.ts`). La página de Privacidad cambia sola su texto de cookies cuando están activas.
+
 ## 7. Datos que faltan del negocio
 - `lib/site.ts` → `LEGAL.cuit` y `LEGAL.email` (se muestran en Términos y Privacidad cuando se completan).
 - Si el negocio está inscripto en ARCA: agregar el **QR de Data Fiscal** en el footer (`components/layout/Footer.tsx`).

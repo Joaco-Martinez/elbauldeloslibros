@@ -24,7 +24,7 @@ function Row({ hidden }: { hidden?: boolean }) {
         return (
           <li key={`${genre.label}-${i}`} className="flex items-center" aria-hidden={copy || undefined}>
             <Link
-              href={`/catalogo#${genre.id}`}
+              href={`/catalogo/${genre.id}`}
               tabIndex={copy ? -1 : undefined}
               className="display t-marquee focus-ring whitespace-nowrap rounded-md px-4 decoration-mustard decoration-4 underline-offset-8 hover:underline md:px-6"
               style={{ '--ring': 'var(--color-cream)' } as React.CSSProperties}
