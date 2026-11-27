@@ -21,6 +21,8 @@ export interface AbandonedCart {
   provincia: string;
   /** Cuándo le escribiste (para no escribirle dos veces). */
   contactedAt?: string;
+  /** Cuándo le mandaste el mail desde el panel. */
+  emailedAt?: string;
   /** Viene de un pedido que se canceló solo por no pagar en 24 h. */
   fromOrderId?: string;
 }

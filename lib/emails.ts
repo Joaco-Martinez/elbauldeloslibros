@@ -260,3 +260,68 @@ export function reviewRequestEmail(order: Order, origin: string) {
 
   return { subject, html, text };
 }
+
+/** Mail de carrito abandonado (o pedido vencido sin pago): le recuerda los libros con el link al carrito armado. */
+export function abandonedCartEmail(
+  cart: { nombre: string; fromOrderId?: string },
+  lines: { title: string; qty: number; subtotal: number }[],
+  link: string,
+) {
+  const name = cart.nombre.split(' ')[0];
+  const hola = `¡Hola${name ? ` ${name}` : ''}!`;
+  const titles = lines.map((l) => l.title);
+  const what = titles.length === 1 ? `"${titles[0]}"` : 'los libros que elegiste';
+  const intro = cart.fromOrderId
+    ? `Tu pedido ${cart.fromOrderId} venció porque no nos llegó el pago en 24 h. Si todavía querés ${what}, te dejamos el carrito armado para hacerlo de nuevo.`
+    : `Vimos que dejaste ${what} en el carrito. ¿Te quedó alguna duda con el envío o el pago? Te lo guardamos, listo para terminar la compra.`;
+  const subject = 'Te guardamos el carrito · El Baul de los Libros';
+  const total = lines.reduce((s, l) => s + l.subtotal, 0);
+
+  const rows = lines
+    .map(
+      (l) => `<tr><td style="padding:6px 0;font-family:${FONT};font-size:14px;color:${C.ink}">${l.qty} × ${esc(l.title)}</td>
+      <td align="right" style="padding:6px 0;font-family:${FONT};font-size:14px;font-weight:700;color:${C.ink}">${formatPrice(l.subtotal)}</td></tr>`,
+    )
+    .join('');
+
+  const html = `<!doctype html><html lang="es"><body style="margin:0;padding:0;background:${C.cream}">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.cream}">
+    <tr><td align="center" style="padding:24px 12px">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px">
+        <tr><td style="background:${C.forest};border-radius:20px 20px 0 0;padding:22px 26px">
+          <div style="font-family:Georgia,serif;font-style:italic;font-size:22px;color:${C.cream}">El Baul de los Libros</div>
+        </td></tr>
+        <tr><td style="background:${C.cream};border:2px solid ${C.beige};border-top:0;border-radius:0 0 20px 20px;padding:26px">
+          <h1 style="margin:0;font-family:${FONT};font-size:30px;line-height:1.05;font-weight:800;letter-spacing:-0.5px;color:${C.rust}">${esc(hola)}</h1>
+          <p style="margin:14px 0 0;font-family:${FONT};font-size:15px;line-height:1.55;color:${C.ink}">${esc(intro)}</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;margin-top:18px">
+            ${rows}
+            <tr><td style="border-top:2px solid ${C.beige};padding:8px 0;font-family:${FONT};font-size:15px;font-weight:700;color:${C.ink}">Libros</td>
+            <td align="right" style="border-top:2px solid ${C.beige};padding:8px 0;font-family:${FONT};font-size:18px;font-weight:800;color:${C.forest}">${formatPrice(total)}</td></tr>
+          </table>
+          <div style="margin-top:22px">${button(link, 'Terminar la compra')}</div>
+          <p style="margin:18px 0 0;font-family:${FONT};font-size:14px;line-height:1.55;color:${C.ink}">Pagando con transferencia tenés <strong>10% off</strong>.</p>
+          <p style="margin:18px 0 0;font-family:${FONT};font-size:12px;color:${C.ink};line-height:1.5">¿Te podemos ayudar con algo? Respondé este mail o escribinos por WhatsApp al ${esc(WHATSAPP_DISPLAY)}.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table></body></html>`;
+
+  const text = [
+    hola,
+    '',
+    intro,
+    '',
+    ...lines.map((l) => `${l.qty} × ${l.title} · ${formatPrice(l.subtotal)}`),
+    `Libros: ${formatPrice(total)}`,
+    '',
+    `Terminá la compra acá: ${link}`,
+    'Pagando con transferencia tenés 10% off.',
+    '',
+    `¿Te podemos ayudar con algo? Respondé este mail o escribinos por WhatsApp al ${WHATSAPP_DISPLAY}.`,
+    '',
+    'El Baul de los Libros',
+  ].join('\n');
+
+  return { subject, html, text };
+}

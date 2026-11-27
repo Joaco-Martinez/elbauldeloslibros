@@ -5,7 +5,8 @@ import { redirect } from 'next/navigation';
 import { CART_ID_RE, cartStore } from '@/lib/abandonedCarts';
 import { WITHDRAWAL_CODE_RE, withdrawalStore } from '@/lib/withdrawals';
 import { checkPassword, endSession, isAdmin, startSession } from '@/lib/adminAuth';
-import { sendReviewRequest, sendStatusEmail } from '@/lib/notify';
+import { sendAbandonedCartEmail, sendReviewRequest, sendStatusEmail } from '@/lib/notify';
+import { restoreCartUrl } from '@/lib/receipt';
 import { feedbackStore, type ReviewStatus } from '@/lib/reviews';
 import { isValidYMD } from '@/lib/orderStatus';
 import { orderStore } from '@/lib/orderStore';
@@ -13,7 +14,7 @@ import { applyStatusChange } from '@/lib/orders';
 import type { OrderStatus } from '@/lib/orderTypes';
 import { getOrigin } from '@/lib/origin';
 import { adjustStock, releaseStock, reserveStock, setStock } from '@/lib/stock';
-import { getBook } from '@/data/books';
+import { fullTitle, getBook } from '@/data/books';
 import { loadCatalog } from '@/lib/catalog';
 
 export interface ActionState {
@@ -144,6 +145,28 @@ export async function markCartContacted(form: FormData) {
   const { contactedAt, ...rest } = cart;
   await cartStore.save(contactedAt ? rest : { ...rest, contactedAt: new Date().toISOString() });
   revalidatePath('/admin/carritos');
+}
+
+/** Botón "Mandarle un mail": sale por Gmail y queda marcado como contactado. */
+export async function emailAbandonedCart(form: FormData) {
+  if (!(await isAdmin())) return;
+  const id = String(form.get('id') ?? '');
+  if (!CART_ID_RE.test(id)) return;
+  const cart = await cartStore.get(id);
+  if (!cart || !cart.email) return;
+  await loadCatalog();
+  const lines = cart.items.flatMap((i) => {
+    const book = getBook(i.id);
+    return book ? [{ title: fullTitle(book), qty: i.qty, subtotal: book.price * i.qty }] : [];
+  });
+  if (lines.length === 0) redirect(`/admin/carritos?mail=vacio`);
+  const result = await sendAbandonedCartEmail(cart.email, cart, lines, restoreCartUrl(await getOrigin(), cart.items));
+  if (result === 'sent') {
+    const at = new Date().toISOString();
+    await cartStore.save({ ...cart, emailedAt: at, contactedAt: cart.contactedAt ?? at });
+  }
+  revalidatePath('/admin/carritos');
+  redirect(`/admin/carritos?mail=${result === 'sent' ? 'ok' : result === 'skipped' ? 'sinconfig' : 'error'}&a=${encodeURIComponent(cart.email)}`);
 }
 
 /** Lo saca de la lista (ya compró por otro lado, era una prueba, etc.). */

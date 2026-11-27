@@ -1,5 +1,5 @@
 import nodemailer, { type Transporter } from 'nodemailer';
-import { customerStatusEmail, reviewRequestEmail, shopNewOrderEmail } from '@/lib/emails';
+import { abandonedCartEmail, customerStatusEmail, reviewRequestEmail, shopNewOrderEmail } from '@/lib/emails';
 import type { Order } from '@/lib/orderTypes';
 import { WHATSAPP_DISPLAY } from '@/lib/site';
 import type { Withdrawal } from '@/lib/withdrawals';
@@ -178,6 +178,28 @@ export async function sendReviewRequest(order: Order, origin: string): Promise<M
     return 'sent';
   } catch (err) {
     console.error('[opiniones] No se pudo mandar el pedido de opinión', err);
+    return 'failed';
+  }
+}
+
+/** Mail de carrito abandonado, mandado desde /admin/carritos. */
+export async function sendAbandonedCartEmail(
+  to: string,
+  cart: { nombre: string; fromOrderId?: string },
+  lines: { title: string; qty: number; subtotal: number }[],
+  link: string,
+): Promise<MailResult> {
+  const cfg = config();
+  const mail = abandonedCartEmail(cart, lines, link);
+  if (!cfg) {
+    console.warn(`[carritos] Mail sin configurar (${to}) · ${mail.subject}\n${mail.text}`);
+    return 'skipped';
+  }
+  try {
+    await sendEmail(cfg, { to, subject: mail.subject, text: mail.text, html: mail.html, replyTo: cfg.shop });
+    return 'sent';
+  } catch (err) {
+    console.error('[carritos] No se pudo mandar el mail del carrito', err);
     return 'failed';
   }
 }
