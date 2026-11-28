@@ -24,7 +24,7 @@ let transporter: Transporter | null = null;
 
 async function sendEmail(
   cfg: { user: string; pass: string; from: { name: string; address: string } },
-  msg: { to: string; subject: string; text: string; html?: string; replyTo?: string },
+  msg: { to: string; subject: string; text: string; html?: string; replyTo?: string; bcc?: string },
 ) {
   transporter ??= nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -39,6 +39,7 @@ async function sendEmail(
     text: msg.text,
     ...(msg.html ? { html: msg.html } : {}),
     ...(msg.replyTo ? { replyTo: msg.replyTo } : {}),
+    ...(msg.bcc ? { bcc: msg.bcc } : {}),
   });
 }
 
@@ -182,7 +183,7 @@ export async function sendReviewRequest(order: Order, origin: string): Promise<M
   }
 }
 
-/** Mail de carrito abandonado, mandado desde /admin/carritos. */
+/** Mail de carrito abandonado, mandado desde /admin/carritos (con copia oculta al negocio). */
 export async function sendAbandonedCartEmail(
   to: string,
   cart: { nombre: string; fromOrderId?: string },
@@ -196,7 +197,7 @@ export async function sendAbandonedCartEmail(
     return 'skipped';
   }
   try {
-    await sendEmail(cfg, { to, subject: mail.subject, text: mail.text, html: mail.html, replyTo: cfg.shop });
+    await sendEmail(cfg, { to, subject: mail.subject, text: mail.text, html: mail.html, replyTo: cfg.shop, bcc: cfg.shop });
     return 'sent';
   } catch (err) {
     console.error('[carritos] No se pudo mandar el mail del carrito', err);

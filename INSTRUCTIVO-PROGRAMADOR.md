@@ -78,7 +78,7 @@ Cada cambio queda en `order.history` (fecha y nota) y se ve en la línea de tiem
   - **Córdoba Capital** (provincia Córdoba + localidad "Córdoba"; si falta la localidad, CP 5000–5024): solo **retiro** (sin costo) o **Uber Moto** (lo paga el cliente). Se coordina por WhatsApp.
   - **Resto del país**: Correo Argentino **a sucursal** o **a domicilio**. El precio sale de `lib/shipping.ts` (3 zonas × peso por cantidad de libros) y se suma al total.
   - Celular en dos campos (código de área sin 0 + número sin 15 = 10 dígitos), como lo pide MiCorreo.
-- **Carrito abandonado**: cuando el cliente completa email o celular, se guarda su carrito (`POST /api/carritos`). Si a las 2 h no compró, aparece en **Panel → Carritos** con botón de WhatsApp (mensaje armado), botón **Mandarle un mail** (sale solo por Gmail SMTP con `sendAbandonedCartEmail`, lo marca como contactado y guarda `emailedAt`) y un link que le rearma el carrito (`/checkout?c=id:cant,…`). Se borra solo si compra (por id de checkout o por email) o a los 30 días.
+- **Carrito abandonado**: cuando el cliente completa email o celular, se guarda su carrito (`POST /api/carritos`). Si a las 2 h no compró, aparece en **Panel → Carritos** con botón de WhatsApp (mensaje armado), botón **Mandarle un mail** (sale solo por Gmail SMTP con `sendAbandonedCartEmail`, con copia oculta (BCC) a `ORDER_EMAIL` o la casilla de Gmail, lo marca como contactado y guarda `emailedAt`) y un link que le rearma el carrito (`/checkout?c=id:cant,…`). Se borra solo si compra (por id de checkout o por email) o a los 30 días.
 
 ### 2) Confirmación (`POST /api/pedidos`)
 1. Valida datos y **recalcula precios y envío en el servidor**.

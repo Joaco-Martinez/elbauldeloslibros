@@ -45,7 +45,7 @@ function messageFor(cart: AbandonedCart, link: string) {
 type Props = { searchParams: Promise<{ mail?: string; a?: string }> };
 
 function mailNotice(mail: string | undefined, to: string | undefined) {
-  if (mail === 'ok') return { ok: true, text: `Mail enviado${to ? ` a ${to}` : ''}.` };
+  if (mail === 'ok') return { ok: true, text: `Mail enviado${to ? ` a ${to}` : ''}. Te llegó una copia a tu casilla.` };
   if (mail === 'sinconfig') return { ok: false, text: 'El mail no salió: falta configurar Gmail (GMAIL_USER y GMAIL_APP_PASSWORD).' };
   if (mail === 'error') return { ok: false, text: `El mail${to ? ` a ${to}` : ''} falló. Probá de nuevo en un rato.` };
   if (mail === 'vacio') return { ok: false, text: 'Ese carrito no tiene libros disponibles en el catálogo, no se mandó el mail.' };
